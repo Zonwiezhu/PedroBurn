@@ -15,8 +15,7 @@ export default function AltHomePage() {
     setMousePosition({ x: e.clientX, y: e.clientY });
   };
 
-  const textToType = "This is a professional space where talent meets opportunity. We connect skilled individuals with innovative companies in the Injective ecosystem. Our platform is designed to elevate your career to new heights through meaningful connections.";
-
+const textToType = "Burning PEDRO tokens creates a deflationary mechanism that benefits all holders. By reducing the total supply, each remaining token becomes more scarce and valuable. Our burning portal makes it easy to participate, simply connect your wallet and choose how many PEDRO tokens you'd like to burn for the community's benefit. Together we can strengthen the PEDRO ecosystem.";
   return (
     <>
       <Head>
@@ -168,7 +167,7 @@ export default function AltHomePage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 z-10" />
                 <Image
                   src={src}
-                  alt={`Pedro Art ${index + 1}`}
+                  alt={`Pedro Art ${index + 2}`}
                   width={600}
                   height={600}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-0"
