@@ -31,7 +31,7 @@ const textToType = "Burning PEDRO tokens creates a deflationary mechanism that b
           <div className="absolute inset-0 bg-black opacity-10" />
           <div className="absolute inset-0">
             <Image
-              src="/wallpaper7.png"
+              src="/wallpaper.webp"
               alt="Background texture"
               layout="fill"
               objectFit="cover"
@@ -199,7 +199,7 @@ const textToType = "Burning PEDRO tokens creates a deflationary mechanism that b
               transition={{ delay: 0.2, duration: 0.8 }}
               viewport={{ once: true }}
             >
-              Become part of our growing community on Injective.
+              Become part of our community on Injective.
             </motion.p>
 
             <div className="h-px w-48 mx-auto bg-gradient-to-r from-transparent via-gray-500 to-transparent my-8" />

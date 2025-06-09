@@ -42,14 +42,7 @@ const Navbar = () => {
 
   return (
     <>
-      <style jsx global>{`
-        .fire-bg {
-          background-color: #fff7f0;
-          background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill-opacity='0.1'%3E%3Cpath fill='%23f97316' d='M42 82c-3-4-5-12-3-16s8-7 12-7 8 3 11 7 4 12 2 16-8 5-12 5-8-1-10-5z'/%3E%3Cpath fill='%23ea580c' d='M112 42c-2-3-4-9-2-12s6-5 9-5 6 2 8 5 3 9 1 12-6 4-9 4-6-1-7-4z'/%3E%3Cpath fill='%23f97316' d='M152 122c-4-5-7-15-4-20s11-9 16-9 11 4 15 9 5 15 3 20-11 7-16 7-11-2-14-7z'/%3E%3Cpath fill='%23ea580c' d='M82 152c-3-4-5-12-3-16s8-7 12-7 8 3 11 7 4 12 2 16-8 5-12 5-8-1-10-5z'/%3E%3Cpath fill='%23f97316' d='M22 112c-2-3-4-9-2-12s6-5 9-5 6 2 8 5 3 9 1 12-6 4-9 4-6-1-7-4z'/%3E%3Cpath fill='%23ea580c' d='M172 72c-3-4-5-12-3-16s8-7 12-7 8 3 11 7 4 12 2 16-8 5-12 5-8-1-10-5z'/%3E%3Cpath fill='%23f97316' d='M62 32c-2-3-4-9-2-12s6-5 9-5 6 2 8 5 3 9 1 12-6 4-9 4-6-1-7-4z'/%3E%3Cpath fill='%23ea580c' d='M132 162c-4-5-7-15-4-20s11-9 16-9 11 4 15 9 5 15 3 20-11 7-16 7-11-2-14-7z'/%3E%3C/g%3E%3C/svg%3E");
-        }
-      `}</style>
-
-      <header className="top-0 z-50 flex-shrink-0 py-3 md:py-2 fire-bg sticky border-b border-orange-200 shadow-sm">
+      <header className="top-0 z-50 flex-shrink-0 py-3 md:py-2 sticky border-b bg-white shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col lg:flex-row justify-between items-center">
           <div className="flex items-center justify-between w-full lg:w-auto">
             <Link
