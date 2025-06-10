@@ -83,7 +83,7 @@ const textToType = "Burning PEDRO tokens creates a deflationary mechanism that b
               className="flex justify-center mt-8"
             >
               <motion.a
-                href="/uploadcv"
+                href="/burn"
                 className="inline-block"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
