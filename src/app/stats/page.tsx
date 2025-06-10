@@ -3,7 +3,7 @@ import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import Head from "next/head";
 import Image from "next/image";
 import { useState, useEffect } from 'react';
-import { FaFire, FaCoins, FaSync, FaUsers } from "react-icons/fa";
+import { FaFire, FaCoins, FaSync, FaUsers, FaExternalLinkAlt } from "react-icons/fa";
 
 export default function PedroBurnTracker() {
   const [displayedNumber, setDisplayedNumber] = useState(0);
@@ -80,28 +80,29 @@ export default function PedroBurnTracker() {
         <meta name="description" content="Track the total amount of PEDRO tokens burned" />
       </Head>
 
-      <div className="min-h-screen bg-black text-white overflow-hidden font-mono">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-10">
-          <div className="absolute inset-0 opacity-20">
+      <div className="min-h-screen bg-black text-white overflow-hidden font-mono selection:bg-white selection:text-black">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0">
             <Image
               src="/wallpaper.webp"
               alt="Background texture"
               layout="fill"
               objectFit="cover"
-              className="mix-blend-overlay"
+              className="opacity-20 mix-blend-overlay"
+              priority
             />
           </div>
         </div>
 
-        <section className="flex items-center justify-center py-5 md:py-12 text-center relative z-10">
+        <section className="flex items-center justify-center py-12 text-center relative overflow-hidden">
           <motion.div
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="px-6 max-w-4xl relative"
+            className="px-6 max-w-4xl relative z-10"
           >
             <motion.h1
-              className="text-4xl md:text-7xl font-bold mb-5 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400"
+              className="text-4xl md:text-7xl font-bold mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8 }}
@@ -111,24 +112,24 @@ export default function PedroBurnTracker() {
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
-              transition={{ delay: 0.6, duration: 1.2, ease: "circOut" }}
-              className="h-px w-full bg-gradient-to-r from-transparent via-orange-500 to-transparent"
+              transition={{ delay: 0.2, duration: 1.2, ease: "circOut" }}
+              className="h-px w-full bg-gradient-to-r from-transparent via-white to-transparent"
             />
           </motion.div>
         </section>
 
-        <div className="relative z-10 container mx-auto px-4 pb-16 max-w-[1500px]">
+        <div className="relative z-10 p-6 max-w-[1500px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black/50 p-8 rounded-xl border border-orange-500/20 mx-auto text-center backdrop-blur-sm"
+            className="bg-black/50 rounded-xl border border-white/10 backdrop-blur-sm mx-auto p-8"
           >
-            <div className="flex flex-col items-center justify-center">
-              <div className="bg-orange-500/20 p-4 rounded-full mb-6">
+            <div className="flex flex-col items-center">
+              <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 p-5 rounded-full mb-6 shadow-lg shadow-red-500/10">
                 <FaFire className="text-orange-400 text-4xl" />
               </div>
               
-              <h2 className="text-2xl font-semibold text-orange-300 mb-2">Total PEDRO Burned</h2>
+              <h2 className="text-2xl font-semibold text-white mb-2">Total PEDRO Burned</h2>
               
               <div className="relative h-32 md:h-48 flex items-center justify-center overflow-hidden w-full">
                 <AnimatePresence mode="wait">
@@ -146,65 +147,57 @@ export default function PedroBurnTracker() {
                       }
                     }}
                     exit={{ y: 20, opacity: 0, rotateX: -90 }}
-                    className="text-6xl md:text-8xl font-bold text-orange-400 mb-4"
-                    style={{ textShadow: '0 0 10px rgba(251, 146, 60, 0.7)' }}
+                    className="text-6xl md:text-8xl font-bold text-white mb-4"
                   >
                     {displayedNumber.toLocaleString()}
                   </motion.div>
                 </AnimatePresence>
               </div>
-              <div className="text-xl text-orange-300 mb-6">PEDRO Tokens</div>
+              <div className="text-xl text-white/80 mb-8">PEDRO Tokens</div>
 
-              {/* Additional Stats Section */}
-              <div className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <FaUsers className="text-orange-400 text-2xl" />
-                    <h3 className="text-xl font-semibold text-orange-300">Holders</h3>
+              {/* Stats Grid */}
+              <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <motion.div 
+                  className="bg-black/40 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all"
+                  whileHover={{ y: -5 }}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="bg-white/10 p-3 rounded-full">
+                      <FaUsers className="text-white text-xl" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">Holders</h3>
                   </div>
-                  <div className="text-3xl font-bold text-white">{holders.toLocaleString()}</div>
-                </div>
+                  <div className="text-3xl font-bold text-center text-white">{holders.toLocaleString()}</div>
+                </motion.div>
 
-                <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <FaCoins className="text-orange-400 text-2xl" />
-                    <h3 className="text-xl font-semibold text-orange-300">Circulating Supply</h3>
+                <motion.div 
+                  className="bg-black/40 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all"
+                  whileHover={{ y: -5 }}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="bg-white/10 p-3 rounded-full">
+                      <FaCoins className="text-white text-xl" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">Circulating Supply</h3>
                   </div>
-                  <div className="text-3xl font-bold text-white">{circulatingSupply.toLocaleString()}</div>
-                </div>
+                  <div className="text-3xl font-bold text-center text-white">{circulatingSupply.toLocaleString()}</div>
+                </motion.div>
 
-                <div className="bg-black/40 p-6 rounded-lg border border-orange-500/20">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <FaFire className="text-orange-400 text-2xl" />
-                    <h3 className="text-xl font-semibold text-orange-300">Top 10 Holders</h3>
+                <motion.div 
+                  className="bg-black/40 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all"
+                  whileHover={{ y: -5 }}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="bg-white/10 p-3 rounded-full">
+                      <FaFire className="text-white text-xl" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">Top 10 Holders</h3>
                   </div>
-                  <div className="text-3xl font-bold text-white">{top10HoldersPercent}%</div>
-                </div>
+                  <div className="text-3xl font-bold text-center text-white">{top10HoldersPercent}%</div>
+                </motion.div>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-4 mt-8">
-                <motion.button
-                  onClick={handleRefresh}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-                >
-                  <FaSync />
-                  Replay Animation
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                  onClick={() => window.open('https://pedro.online', '_blank')}
-                >
-                  <FaCoins />
-                  About PEDRO
-                </motion.button>
-              </div>
-
-              <div className="mt-8 text-gray-400 text-sm">
+              <div className="mt-8 text-white/50 text-sm">
                 <p>Last updated: {lastUpdated || 'Loading...'}</p>              
               </div>
             </div>
