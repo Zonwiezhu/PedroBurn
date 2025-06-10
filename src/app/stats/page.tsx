@@ -107,7 +107,7 @@ export default function PedroBurnTracker() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              BURN STATS
+              PEDRO STATS
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}

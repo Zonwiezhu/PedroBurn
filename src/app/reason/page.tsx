@@ -7,12 +7,55 @@ import { useState } from 'react';
 import { FaFire, FaChartLine, FaShieldAlt, FaPercentage, FaDollarSign, FaExchangeAlt, FaBriefcase, FaPalette } from "react-icons/fa";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 
+// Type definitions
+type RootNode = {
+  id: string;
+  title: string;
+  type: 'root';
+  icon: React.ReactNode;
+  color: string;
+};
+
+type CategoryNode = {
+  id: string;
+  title: string;
+  type: 'category';
+  icon: React.ReactNode;
+  color: string;
+  benefits: string[];
+};
+
+type ActionNode = {
+  id: string;
+  title: string;
+  type: 'action';
+  icon: React.ReactNode;
+  color: string;
+  platforms: string[];
+};
+
+type NodeData = RootNode | CategoryNode | ActionNode;
+
+interface Connection {
+  from: string;
+  to: string;
+}
+
+interface NodeProps {
+  node: NodeData;
+  index: number;
+}
+
+interface ConnectionProps {
+  from: string;
+  to: string;
+}
 
 const PedroBurnDiagram = () => {
-  const [activeNode, setActiveNode] = useState(null);
-  const [hoveredNode, setHoveredNode] = useState(null);
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
-  const nodes = [
+  const nodes: NodeData[] = [
     {
       id: 'why-burn',
       title: 'WHY BURN PEDRO?',
@@ -58,13 +101,13 @@ const PedroBurnDiagram = () => {
     }
   ];
 
-  const connections = [
+  const connections: Connection[] = [
     { from: 'why-burn', to: 'economic' },
     { from: 'economic', to: 'community' },
     { from: 'community', to: 'where-burn' }
   ];
 
-  const Node = ({ node, index }) => {
+  const Node = ({ node, index }: NodeProps) => {
     const isActive = activeNode === node.id;
     const isHovered = hoveredNode === node.id;
     const isRelated = hoveredNode && 
@@ -121,7 +164,7 @@ const PedroBurnDiagram = () => {
     );
   };
 
-  const Connection = ({ from, to }) => {
+  const Connection = ({ from, to }: ConnectionProps) => {
     return (
       <motion.div 
         className="relative h-px bg-gray-600 mx-2 my-auto flex-grow"
@@ -137,6 +180,16 @@ const PedroBurnDiagram = () => {
         />
       </motion.div>
     );
+  };
+
+  const getNodeDescription = (nodeId: string): string => {
+    const descriptions: Record<string, string> = {
+      'why-burn': 'Burning PEDRO tokens creates a deflationary mechanism that benefits all holders through controlled supply reduction.',
+      'economic': 'Economic benefits include price appreciation through scarcity, holder protection against inflation, and increased proportional token value.',
+      'community': 'Community benefits include heightened engagement during burn events and sustainable ecosystem growth through balanced tokenomics.',
+      'where-burn': 'Multiple platforms exist for burning PEDRO, each serving different ecosystem functions while contributing to supply reduction.'
+    };
+    return descriptions[nodeId] || '';
   };
 
   return (
@@ -172,19 +225,16 @@ const PedroBurnDiagram = () => {
   );
 };
 
-// Helper function (add this outside the component)
-const getNodeDescription = (nodeId) => {
-  const descriptions = {
-    'why-burn': 'Burning PEDRO tokens creates a deflationary mechanism that benefits all holders through controlled supply reduction.',
-    'economic': 'Economic benefits include price appreciation through scarcity, holder protection against inflation, and increased proportional token value.',
-    'community': 'Community benefits include heightened engagement during burn events and sustainable ecosystem growth through balanced tokenomics.',
-    'where-burn': 'Multiple platforms exist for burning PEDRO, each serving different ecosystem functions while contributing to supply reduction.'
-  };
-  return descriptions[nodeId] || '';
-};
-
 const PriceReductionChart = () => {
-  const data = [
+  interface ChartData {
+    milestone: string;
+    burned: number;
+    reduction: number;
+    price: string;
+    color: string;
+  }
+
+  const data: ChartData[] = [
     { milestone: 'Current', burned: 0, reduction: 0, price: '100%', color: '#64748b' },
     { milestone: '400M Burned', burned: 400, reduction: 50, price: '50%', color: '#f59e0b' },
     { milestone: '500M Burned', burned: 500, reduction: 75, price: '25%', color: '#ef4444' },
@@ -215,7 +265,7 @@ const PriceReductionChart = () => {
           axisLine={false}
         />
         <Tooltip 
-          formatter={(value, name) => {
+          formatter={(value: number | string, name: string) => {
             if (name === 'price') return [`Service price: ${value} of original`, ''];
             return [value, name];
           }}
@@ -243,7 +293,6 @@ const PriceReductionChart = () => {
           />
         </Bar>
         
-        {/* Burned Tokens Annotation */}
         <Bar 
           dataKey="burned" 
           name="Tokens Burned"
@@ -256,7 +305,7 @@ const PriceReductionChart = () => {
             fill="#94a3b8"
             fontSize={12}
             offset={-80}
-            formatter={(value) => value > 0 ? `${value}M $PEDRO` : ''}
+            formatter={(value: number) => value > 0 ? `${value}M $PEDRO` : ''}
           />
         </Bar>
       </BarChart>
@@ -264,8 +313,30 @@ const PriceReductionChart = () => {
   );
 };
 
+interface BenefitItem {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  color: string;
+}
+
+interface BurnPlatform {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  link: string;
+  linkText: string;
+  color: string;
+}
+
+interface EconomicImpact {
+  title: string;
+  description: string;
+  icon: string;
+}
+
 export default function PedroBurnBenefits() {
-  const benefits = [
+  const benefits: BenefitItem[] = [
     {
       icon: <FaChartLine className="text-sm" />,
       title: "Price Appreciation",
@@ -304,7 +375,7 @@ export default function PedroBurnBenefits() {
     }
   ];
 
-  const burnPlatforms = [
+  const burnPlatforms: BurnPlatform[] = [
     {
       icon: <FaFire className="text-sm" />,
       title: "Direct Burn Portal",
@@ -339,7 +410,7 @@ export default function PedroBurnBenefits() {
     }
   ];
 
-  const economicImpacts = [
+  const economicImpacts: EconomicImpact[] = [
     {
       title: "Supply Reduction",
       description: "Each burn permanently removes tokens from circulation, reducing total supply.",
@@ -360,7 +431,7 @@ export default function PedroBurnBenefits() {
   return (
     <>
       <Head>
-        <title>WHY BURN PEDRO</title>
+        <title>WHY BURN</title>
         <meta name="description" content="Understanding the benefits of burning PEDRO tokens and where to burn them" />
       </Head>
 
@@ -368,7 +439,7 @@ export default function PedroBurnBenefits() {
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 opacity-20">
             <Image
-              src="/wallpaper7.png"
+              src="/wallpaper.webp"
               alt="Background texture"
               layout="fill"
               objectFit="cover"
@@ -390,7 +461,7 @@ export default function PedroBurnBenefits() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              WHY BURN PEDRO
+              WHY BURN
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}
