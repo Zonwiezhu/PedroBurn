@@ -2,29 +2,33 @@
 import { motion } from "framer-motion";
 import Head from "next/head";
 import Image from "next/image";
+import React from "react";
 import { useState } from 'react';
 import { FaFire, FaChartLine, FaShieldAlt, FaPercentage, FaDollarSign, FaExchangeAlt, FaBriefcase, FaPalette } from "react-icons/fa";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
+
 
 const PedroBurnDiagram = () => {
   const [activeNode, setActiveNode] = useState(null);
+  const [hoveredNode, setHoveredNode] = useState(null);
 
   const nodes = [
     {
       id: 'why-burn',
       title: 'WHY BURN PEDRO?',
       type: 'root',
-      position: 'top-center',
-      icon: <FaFire className="mx-auto mb-2" />
+      icon: <FaFire className="text-amber-400" size={20} />,
+      color: 'bg-gradient-to-r from-amber-500 to-yellow-500'
     },
     {
       id: 'economic',
       title: 'ECONOMIC BENEFITS',
       type: 'category',
-      position: 'left',
-      icon: <FaDollarSign className="mx-auto mb-2" />,
+      icon: <FaDollarSign className="text-emerald-400" size={18} />,
+      color: 'bg-gradient-to-r from-emerald-500 to-green-500',
       benefits: [
-        'Price Appreciation (Scarcity)',
-        'Holder Protection (Anti-Inflation)',
+        'Price Appreciation',
+        'Holder Protection',
         'Increased Token Value'
       ]
     },
@@ -32,8 +36,8 @@ const PedroBurnDiagram = () => {
       id: 'community',
       title: 'COMMUNITY BENEFITS',
       type: 'category',
-      position: 'right',
-      icon: <FaChartLine className="mx-auto mb-2" />,
+      icon: <FaChartLine className="text-blue-400" size={18} />,
+      color: 'bg-gradient-to-r from-blue-500 to-cyan-500',
       benefits: [
         'Community Engagement',
         'Sustainable Growth'
@@ -43,10 +47,10 @@ const PedroBurnDiagram = () => {
       id: 'where-burn',
       title: 'WHERE TO BURN',
       type: 'action',
-      position: 'bottom-center',
-      icon: <FaFire className="mx-auto mb-2" />,
+      icon: <FaFire className="text-red-400" size={20} />,
+      color: 'bg-gradient-to-r from-red-500 to-pink-500',
       platforms: [
-        'Direct Burn Portal',
+        'Burn Portal',
         'Pedro Jobs',
         'NFT Generator',
         'DEX Platforms'
@@ -56,132 +60,207 @@ const PedroBurnDiagram = () => {
 
   const connections = [
     { from: 'why-burn', to: 'economic' },
-    { from: 'why-burn', to: 'community' },
-    { from: 'economic', to: 'where-burn' },
+    { from: 'economic', to: 'community' },
     { from: 'community', to: 'where-burn' }
   ];
 
-  const getNodeDescription = (nodeId) => {
-    const descriptions = {
-      'why-burn': 'Burning PEDRO tokens creates a deflationary mechanism that benefits all holders through controlled supply reduction.',
-      'economic': 'Economic benefits include price appreciation through scarcity, holder protection against inflation, and increased proportional token value.',
-      'community': 'Community benefits include heightened engagement during burn events and sustainable ecosystem growth through balanced tokenomics.',
-      'where-burn': 'Multiple platforms exist for burning PEDRO, each serving different ecosystem functions while contributing to supply reduction.'
-    };
-    return descriptions[nodeId] || '';
-  };
+  const Node = ({ node, index }) => {
+    const isActive = activeNode === node.id;
+    const isHovered = hoveredNode === node.id;
+    const isRelated = hoveredNode && 
+      (connections.some(conn => conn.from === node.id && conn.to === hoveredNode)) || 
+      (connections.some(conn => conn.from === hoveredNode && conn.to === node.id));
 
-  const Node = ({ node }) => (
-    <motion.div
-      className={`absolute ${getPositionClasses(node.position)} 
-        p-4 rounded-lg border-2 cursor-pointer w-40 md:w-48
-        ${activeNode === node.id ? 'bg-white/20 border-white' : 'bg-black/50 border-white/10'}
-        transition-all duration-300 flex flex-col items-center`}
-      whileHover={{ scale: 1.05 }}
-      onClick={() => setActiveNode(node.id)}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-    >
-      <div className="text-xl">
-        {node.icon}
-      </div>
-      <h3 className="font-bold text-center mb-2 text-sm md:text-base">{node.title}</h3>
-      
-      {node.type === 'category' && (
-        <ul className="text-xs space-y-1">
-          {node.benefits.map((benefit, i) => (
-            <li key={i}>• {benefit}</li>
-          ))}
-        </ul>
-      )}
-      
-      {node.type === 'action' && (
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          {node.platforms.map((platform, i) => (
-            <div key={i} className="bg-white/5 p-1 rounded text-center truncate">
-              {platform}
-            </div>
-          ))}
-        </div>
-      )}
-    </motion.div>
-  );
-
-  const Connection = ({ from, to }) => {
-    const fromNode = nodes.find(n => n.id === from);
-    const toNode = nodes.find(n => n.id === to);
-    
     return (
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
-        <motion.line
-          x1={getPositionX(fromNode.position)}
-          y1={getPositionY(fromNode.position)}
-          x2={getPositionX(toNode.position)}
-          y2={getPositionY(toNode.position)}
-          stroke="rgba(255,255,255,0.3)"
-          strokeWidth="2"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1 }}
-        />
-      </svg>
+      <motion.div
+        className={`relative mx-4 p-5 rounded-xl cursor-pointer w-56
+          ${isActive || isHovered ? node.color : 'bg-gray-800 border border-gray-700'}
+          shadow-lg transition-all duration-300 flex flex-col items-center z-10`}
+        whileHover={{ scale: 1.05 }}
+        onHoverStart={() => setHoveredNode(node.id)}
+        onHoverEnd={() => setHoveredNode(null)}
+        onClick={() => setActiveNode(isActive ? null : node.id)}
+        animate={{
+          opacity: isRelated && !isHovered ? 0.8 : 1,
+          scale: isRelated && !isHovered ? 0.95 : 1,
+        }}
+      >
+        <div className={`p-3 rounded-full mb-3 ${isActive || isHovered ? 'bg-white/20' : 'bg-black/30'}`}>
+          {node.icon}
+        </div>
+        <h3 className={`font-bold text-center mb-3 text-sm ${isActive || isHovered ? 'text-white' : 'text-gray-200'}`}>
+          {node.title}
+        </h3>
+
+        {node.type === 'category' && (
+          <ul className="space-y-1 text-left w-full px-2">
+            {node.benefits.map((benefit, i) => (
+              <li key={i} className="flex items-start">
+                <span className={`mr-2 text-xs ${isActive || isHovered ? 'text-white' : 'text-gray-400'}`}>•</span>
+                <span className={`text-xs ${isActive || isHovered ? 'text-white/90' : 'text-gray-300'}`}>
+                  {benefit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {node.type === 'action' && (
+          <div className="grid grid-cols-2 gap-2 w-full mt-2">
+            {node.platforms.map((platform, i) => (
+              <div 
+                key={i} 
+                className={`p-1 rounded text-center text-xs ${isActive || isHovered ? 'bg-white/20' : 'bg-black/30'}`}
+              >
+                {platform}
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
     );
   };
 
-  const getPositionClasses = (position) => {
-    const classes = {
-      'top-center': 'top-4 left-1/2 -translate-x-1/2',
-      'left': 'top-1/3 left-4 md:left-10',
-      'right': 'top-1/3 right-4 md:right-10',
-      'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2'
-    };
-    return classes[position] || '';
-  };
-
-  const getPositionX = (position) => {
-    const positions = {
-      'top-center': '50%',
-      'left': '20%',
-      'right': '80%',
-      'bottom-center': '50%'
-    };
-    return positions[position];
-  };
-
-  const getPositionY = (position) => {
-    const positions = {
-      'top-center': '10%',
-      'left': '40%',
-      'right': '40%',
-      'bottom-center': '90%'
-    };
-    return positions[position];
+  const Connection = ({ from, to }) => {
+    return (
+      <motion.div 
+        className="relative h-px bg-gray-600 mx-2 my-auto flex-grow"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          className="absolute h-full bg-white origin-left"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: hoveredNode === from || hoveredNode === to ? 1 : 0.3 }}
+          transition={{ duration: 0.3 }}
+        />
+      </motion.div>
+    );
   };
 
   return (
-    <div className="relative w-full h-80 md:h-[500px] bg-black/30 rounded-xl border border-white/10 mt-12 overflow-hidden">
-      {connections.map((conn, i) => (
-        <Connection key={i} from={conn.from} to={conn.to} />
-      ))}
-      
-      {nodes.map((node) => (
-        <Node key={node.id} node={node} />
-      ))}
+    <div className="relative w-full bg-gray-900/50 rounded-2xl border border-gray-700 mt-12 overflow-hidden p-8">
+      <div className="flex items-center justify-center">
+        {nodes.map((node, index) => (
+          <React.Fragment key={node.id}>
+            <Node node={node} index={index} />
+            {index < nodes.length - 1 && (
+              <Connection from={nodes[index].id} to={nodes[index + 1].id} />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-sm text-gray-400 bg-black/50">
-        {activeNode ? (
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="max-w-md mx-auto"
-          >
-            {getNodeDescription(activeNode)}
-          </motion.p>
-        ) : (
-          <span className="text-white/70">Click on any node to learn more</span>
-        )}
+      <div className="mt-8 px-6 pb-4">
+        <motion.div 
+          className="max-w-4xl mx-auto bg-gray-800/90 p-4 rounded-lg border border-gray-700 backdrop-blur-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ 
+            opacity: activeNode ? 1 : 0.7,
+            y: activeNode ? 0 : 20
+          }}
+        >
+          <p className="text-gray-300 text-center text-sm">
+            {activeNode 
+              ? getNodeDescription(activeNode) 
+              : "Click on any node to learn more about PEDRO token burning"}
+          </p>
+        </motion.div>
       </div>
     </div>
+  );
+};
+
+// Helper function (add this outside the component)
+const getNodeDescription = (nodeId) => {
+  const descriptions = {
+    'why-burn': 'Burning PEDRO tokens creates a deflationary mechanism that benefits all holders through controlled supply reduction.',
+    'economic': 'Economic benefits include price appreciation through scarcity, holder protection against inflation, and increased proportional token value.',
+    'community': 'Community benefits include heightened engagement during burn events and sustainable ecosystem growth through balanced tokenomics.',
+    'where-burn': 'Multiple platforms exist for burning PEDRO, each serving different ecosystem functions while contributing to supply reduction.'
+  };
+  return descriptions[nodeId] || '';
+};
+
+const PriceReductionChart = () => {
+  const data = [
+    { milestone: 'Current', burned: 0, reduction: 0, price: '100%', color: '#64748b' },
+    { milestone: '400M Burned', burned: 400, reduction: 50, price: '50%', color: '#f59e0b' },
+    { milestone: '500M Burned', burned: 500, reduction: 75, price: '25%', color: '#ef4444' },
+    { milestone: '600M Burned', burned: 600, reduction: 87.5, price: '12.5%', color: '#10b981' },
+    { milestone: '700M Burned', burned: 700, reduction: 93.75, price: '6.25%', color: '#3b82f6' },
+    { milestone: '800M Burned', burned: 800, reduction: 96.875, price: '3.125%', color: '#8b5cf6' },
+  ];
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 20, right: 30, left: 100, bottom: 60 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" opacity={0.1} horizontal={false} />
+        <XAxis 
+          type="number" 
+          domain={[0, 100]}
+          tickFormatter={(value) => `${value}%`}
+          axisLine={false}
+        />
+        <YAxis 
+          dataKey="milestone" 
+          type="category" 
+          width={120}
+          tick={{ fontSize: 14 }}
+          axisLine={false}
+        />
+        <Tooltip 
+          formatter={(value, name) => {
+            if (name === 'price') return [`Service price: ${value} of original`, ''];
+            return [value, name];
+          }}
+          contentStyle={{
+            background: 'rgba(0, 0, 0, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+          }}
+        />
+        <Bar 
+          dataKey="reduction" 
+          name="Price Reduction"
+          animationDuration={1500}
+          radius={[0, 4, 4, 0]}
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
+          ))}
+          <LabelList 
+            dataKey="price" 
+            position="right" 
+            fill="#ffffff"
+            fontSize={14}
+            offset={10}
+          />
+        </Bar>
+        
+        {/* Burned Tokens Annotation */}
+        <Bar 
+          dataKey="burned" 
+          name="Tokens Burned"
+          stackId="a"
+          fill="transparent"
+        >
+          <LabelList 
+            dataKey="burned" 
+            position="left" 
+            fill="#94a3b8"
+            fontSize={12}
+            offset={-80}
+            formatter={(value) => value > 0 ? `${value}M $PEDRO` : ''}
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 
@@ -338,6 +417,17 @@ export default function PedroBurnBenefits() {
             <PedroBurnDiagram />
 
             <div className="mt-16">
+              <h3 className="text-3xl font-bold text-center mb-6">Service Price Reduction Schedule</h3>
+              <p className="text-center text-gray-300 mb-8 max-w-2xl mx-auto">
+                Every 100M $PEDRO burned reduces ecosystem service prices by 50% starting at 400M burned
+              </p>
+              
+              <div className="h-[500px] w-full bg-black/40 p-4 rounded-xl border border-white/10">
+                <PriceReductionChart />
+              </div>
+            </div>
+
+            <div className="mt-16">
               <h3 className="text-3xl font-bold text-center mb-6">Detailed Benefits</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
                 {benefits.map((benefit, index) => (
@@ -388,25 +478,6 @@ export default function PedroBurnBenefits() {
                     >
                       {platform.linkText}
                     </motion.a>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-16 bg-black/60 p-6 rounded-xl border border-white/10">
-              <h3 className="text-2xl font-bold text-center mb-6">Economic Impact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {economicImpacts.map((impact, index) => (
-                  <motion.div 
-                    key={index}
-                    whileHover={{ scale: 1.02 }}
-                    className="p-4 bg-white/5 rounded-lg border border-white/10"
-                  >
-                    <div className="text-2xl mb-2">{impact.icon}</div>
-                    <h4 className="font-semibold text-lg mb-2">{impact.title}</h4>
-                    <p className="text-gray-300 text-sm">
-                      {impact.description}
-                    </p>
                   </motion.div>
                 ))}
               </div>
