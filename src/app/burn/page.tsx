@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiCheck, FiExternalLink } from 'react-icons/fi';
-import { FaFire } from 'react-icons/fa';
+import { FaFire, FaWallet } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 
@@ -27,25 +27,52 @@ const TokenBurnPage = () => {
       native: true
     },
     {
-      name: 'Wrapped ETH',
-      symbol: 'WETH',
-      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-      amount: '2.50',
+      name: 'Random Shit Token',
+      symbol: 'SHIT',
+      address: '0x789...012',
+      amount: '500000.00',
       burnAmount: '0',
       decimals: 18
     },
     {
-      name: 'USD Coin',
-      symbol: 'USDC',
-      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      amount: '500.00',
+      name: 'Another Useless Token',
+      symbol: 'USELESS',
+      address: '0x345...678',
+      amount: '25000.00',
       burnAmount: '0',
-      decimals: 6
+      decimals: 18
     }
   ]);
 
   const [selectedTokens, setSelectedTokens] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeWalletType, setActiveWalletType] = useState<"keplr" | "leap" | null>(null);
+  const [currentPedroImage, setCurrentPedroImage] = useState(1);
+  const [useAlternateWallpaper, setUseAlternateWallpaper] = useState(false);
+
+  useEffect(() => {
+    if (!isConnected) {
+      const interval = setInterval(() => {
+        setCurrentPedroImage(prev => (prev % 24) + 1); // Cycle through 1-24
+      }, 100); // Change image every 100ms for fast animation
+      
+      return () => clearInterval(interval);
+    }
+  }, [isConnected]);
+
+  const connectWallet = async (walletType: "keplr" | "leap") => {
+      setActiveWalletType(walletType);
+      setIsLoading(true);
+      
+      try {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setIsConnected(true);
+      } finally {
+          setIsLoading(false);
+          setActiveWalletType(null);
+      }
+  };
 
   const toggleTokenSelection = (tokenAddress: string) => {
     setSelectedTokens(prev => 
@@ -63,10 +90,6 @@ const TokenBurnPage = () => {
     ));
   };
 
-  const handleConnect = () => {
-    setIsConnected(true);
-  };
-
   const handleDisconnect = () => {
     setIsConnected(false);
     setSelectedTokens([]);
@@ -74,6 +97,10 @@ const TokenBurnPage = () => {
 
   const handleBurn = () => {
     alert(`UI Mock: Burning ${selectedTokens.length} selected tokens`);
+  };
+
+  const toggleWallpaper = () => {
+    setUseAlternateWallpaper(!useAlternateWallpaper);
   };
 
   const getBurnSummary = (amount: string, burnAmount: string) => {
@@ -97,15 +124,33 @@ const TokenBurnPage = () => {
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0">
           <Image
-            src="/wallpaper.webp"
+            src={useAlternateWallpaper ? "/wallpaper2.webp" : "/wallpaper.webp"}
             alt="Background texture"
             layout="fill"
             objectFit="cover"
-            className="opacity-20 mix-blend-overlay"
+            className="opacity-10"
             priority
           />
         </div>
       </div>
+
+      {/* Wallpaper toggle button */}
+      <button 
+        onClick={toggleWallpaper}
+        className="fixed bottom-4 right-4 z-50 p-2 bg-black/50 rounded-full border border-white/20 hover:bg-white/10 transition-all"
+        title="Toggle wallpaper"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+          <line x1="7" y1="2" x2="7" y2="22"></line>
+          <line x1="17" y1="2" x2="17" y2="22"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <line x1="2" y1="7" x2="7" y2="7"></line>
+          <line x1="2" y1="17" x2="7" y2="17"></line>
+          <line x1="17" y1="17" x2="22" y2="17"></line>
+          <line x1="17" y1="7" x2="22" y2="7"></line>
+        </svg>
+      </button>
 
       <div className="relative z-10 p-6 max-w-[1500px] mx-auto">
         <section className="flex items-center justify-center py-12 text-center relative overflow-hidden">
@@ -116,12 +161,12 @@ const TokenBurnPage = () => {
               className="px-6 max-w-4xl relative z-10"
             >
               <motion.h1
-                className="text-4xl md:text-7xl font-bold mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
+                className="text-4xl md:text-7xl font-bold mb-5"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.8 }}
               >
-                BURN TOKEN
+                TOKEN BURNER
               </motion.h1>
               <motion.div
                 initial={{ opacity: 0, scaleX: 0 }}
@@ -134,27 +179,127 @@ const TokenBurnPage = () => {
 
         {!isConnected ? (
           <motion.div 
-            className="text-center py-20 bg-black/50 rounded-xl border border-white/10 backdrop-blur-sm"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+              className="flex flex-col items-center justify-center text-center py-20 bg-black rounded-xl border border-white/20"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
           >
-            <h2 className="text-2xl mb-6">Connect your wallet to view tokens</h2>
-            <motion.button
-              onClick={handleConnect}
-              className="px-6 py-3 bg-white hover:bg-white/10 rounded-lg transition-all duration-300 border text-black hover:text-white font-medium text-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Connect Wallet
-            </motion.button>
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mb-8"
+              >
+                <div className="relative inline-block">
+                  <FaWallet className="text-6xl mb-4" />
+                  <motion.div 
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white flex items-center justify-center"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <FaFire className="text-xs text-black" />
+                  </motion.div>
+                </div>
+                <h2 className="text-3xl font-bold mb-2">
+                  CONNECT TO BURN
+                </h2>
+                <p className="text-white/70 max-w-md mx-auto">
+                  Burn PEDRO or any random tokens to the ground
+                </p>
+              </motion.div>
+              
+              <div className="space-y-4 w-full max-w-xs">
+                  <motion.button
+                      onClick={() => connectWallet("keplr")}
+                      disabled={isLoading && activeWalletType !== "keplr"}
+                      className={`w-full px-6 py-3 rounded-lg text-sm font-medium border transition-all duration-300 flex items-center justify-center ${
+                          isLoading && activeWalletType === "keplr" 
+                              ? "bg-white/10 border-white/20" 
+                              : "bg-black border-white hover:bg-white hover:text-black"
+                      }`}
+                      whileHover={{ 
+                          scale: isLoading && activeWalletType === "keplr" ? 1 : 1.05,
+                          opacity: isLoading && activeWalletType === "keplr" ? 0.8 : 1
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                  >
+                      {isLoading && activeWalletType === "keplr" ? (
+                          <span className="flex items-center justify-center">
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                              CONNECTING...
+                          </span>
+                      ) : (
+                          <span className="flex items-center justify-center">
+                              <img 
+                                  src="/keplr logo.png" 
+                                  alt="Keplr Logo" 
+                                  className="w-5 h-5 mr-3" 
+                                  onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/wallet-fallback.png';
+                                  }}
+                              />
+                              CONNECT KEPLR
+                          </span>
+                      )}
+                  </motion.button>
+                  
+                  <motion.button
+                      onClick={() => connectWallet("leap")}
+                      disabled={isLoading && activeWalletType !== "leap"}
+                      className={`w-full px-6 py-3 rounded-lg text-sm font-medium border transition-all duration-300 flex items-center justify-center ${
+                          isLoading && activeWalletType === "leap" 
+                              ? "bg-white/10 border-white/20" 
+                              : "bg-black border-white hover:bg-white hover:text-black"
+                      }`}
+                      whileHover={{ 
+                          scale: isLoading && activeWalletType === "leap" ? 1 : 1.05,
+                          opacity: isLoading && activeWalletType === "leap" ? 0.8 : 1
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                  >
+                      {isLoading && activeWalletType === "leap" ? (
+                          <span className="flex items-center justify-center">
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                              CONNECTING...
+                          </span>
+                      ) : (
+                          <span className="flex items-center justify-center">
+                              <img 
+                                  src="/leap logo.png" 
+                                  alt="Leap Logo" 
+                                  className="w-5 h-5 mr-3" 
+                                  onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/wallet-fallback.png';
+                                  }}
+                              />
+                              CONNECT LEAP
+                          </span>
+                      )}
+                  </motion.button>
+              </div>
+
+              <motion.div 
+                className="mt-12 relative w-64 h-64"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Image
+                  src={`/pedro${currentPedroImage}.png`}
+                  alt="Pedro animation"
+                  width={256}
+                  height={256}
+                  className="object-contain"
+                  priority
+                />
+              </motion.div>
           </motion.div>
         ) : (
           <>
             <div className="flex justify-end mb-8">
               <motion.button 
                 onClick={handleDisconnect}
-                className="px-4 py-2 bg-transparent hover:bg-white/10 rounded-lg transition-all duration-300 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 font-medium"
+                className="px-4 py-2 bg-transparent hover:bg-white/10 rounded-lg transition-all duration-300 border border-white hover:border-white text-white font-medium"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -163,13 +308,13 @@ const TokenBurnPage = () => {
             </div>
 
             <motion.div 
-              className="bg-black/50 rounded-xl overflow-hidden border border-white/10 backdrop-blur-sm mb-8"
+              className="bg-black rounded-xl overflow-hidden border border-white/20 mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
               <table className="w-full">
-                <thead className="bg-white/5 border-b border-white/10">
+                <thead className="bg-white/5 border-b border-white/20">
                   <tr>
                     <th className="px-6 py-4 text-left w-12"></th>
                     <th className="px-6 py-4 text-left">Token</th>
@@ -182,7 +327,7 @@ const TokenBurnPage = () => {
                   {tokens.map((token, index) => (
                     <motion.tr 
                       key={token.address} 
-                      className={`border-b border-white/5 ${index % 2 === 0 ? 'bg-black/20' : 'bg-black/10'}`}
+                      className={`border-b border-white/5 ${index % 2 === 0 ? 'bg-black' : 'bg-black/80'}`}
                       whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
                       transition={{ duration: 0.2 }}
                     >
@@ -191,13 +336,13 @@ const TokenBurnPage = () => {
                           onClick={() => toggleTokenSelection(token.address)}
                           className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
                             selectedTokens.includes(token.address) 
-                              ? 'bg-gradient-to-br from-red-500 to-orange-500 shadow-lg shadow-red-500/20' 
-                              : 'border border-white/30 hover:border-white/50'
+                              ? 'bg-white shadow-lg' 
+                              : 'border border-white/30 hover:border-white'
                           }`}
                           whileTap={{ scale: 0.9 }}
                         >
                           {selectedTokens.includes(token.address) && (
-                            <FiCheck className="text-white" />
+                            <FiCheck className="text-black" />
                           )}
                         </motion.button>
                       </td>
@@ -219,7 +364,7 @@ const TokenBurnPage = () => {
                           </span>
                           {!token.native && (
                             <motion.button 
-                              className="text-blue-400 hover:text-blue-300"
+                              className="text-white/70 hover:text-white"
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                             >
@@ -237,7 +382,7 @@ const TokenBurnPage = () => {
                             type="number"
                             value={token.burnAmount}
                             onChange={(e) => updateTokenAmount(token.address, e.target.value)}
-                            className="bg-white/5 border border-white/10 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all"
+                            className="bg-white/5 border border-white/20 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
                             min="0"
                             max={token.amount}
                             step={1 / (10 ** token.decimals)}
@@ -257,16 +402,16 @@ const TokenBurnPage = () => {
                 disabled={selectedTokens.length === 0}
                 className={`flex items-center gap-3 px-8 py-4 rounded-xl text-lg font-bold transition-all relative overflow-hidden ${
                   selectedTokens.length === 0
-                    ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/10'
-                    : 'bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 shadow-lg hover:shadow-red-500/30 border border-red-500/50 hover:border-red-500'
+                    ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/20'
+                    : 'bg-white text-black hover:bg-white/90 shadow-lg border border-white'
                 }`}
                 whileHover={selectedTokens.length > 0 ? { scale: 1.05 } : {}}
                 whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
               >
-                <FaFire className="text-white" />
+                <FaFire className="" />
                 Burn Selected Tokens
                 {selectedTokens.length > 0 && (
-                  <span className="ml-2 bg-white/20 px-2 py-1 rounded text-sm font-mono">
+                  <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
                     {selectedTokens.length}
                   </span>
                 )}
@@ -276,7 +421,7 @@ const TokenBurnPage = () => {
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-orange-500/10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5"></div>
                   </motion.div>
                 )}
               </motion.button>
@@ -284,13 +429,13 @@ const TokenBurnPage = () => {
 
             {selectedTokens.length > 0 && (
               <motion.div 
-                className="mt-6 p-6 bg-black/50 border border-white/10 rounded-lg backdrop-blur-sm"
+                className="mt-6 p-6 bg-black border border-white/20 rounded-lg"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <h3 className="font-bold mb-4 text-xl bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
-                  Burn Summary
+                <h3 className="font-bold mb-4 text-xl">
+                  BURN SUMMARY
                 </h3>
                 <ul className="space-y-3">
                   {tokens
@@ -311,7 +456,7 @@ const TokenBurnPage = () => {
                             </div>
                             <span>{token.name} ({token.symbol})</span>
                           </div>
-                          <span className="font-mono text-orange-400">
+                          <span className="font-mono">
                             {summary.display}
                           </span>
                         </motion.li>
