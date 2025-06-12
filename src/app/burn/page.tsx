@@ -136,7 +136,7 @@ const TokenBurnPage = () => {
               alt="Background texture"
               layout="fill"
               objectFit="cover"
-              className="opacity-40 mix-blend-overlay"
+              className="opacity-20 mix-blend-overlay"
               priority
             />
           </div>
