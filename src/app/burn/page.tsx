@@ -128,7 +128,7 @@ const TokenBurnPage = () => {
         <meta property="og:image" content="/pedro_logo4.png" />
       </Head>
 
-      <div className="min-h-screen bg-black text-white overflow-hidden font-mono selection:bg-white selection:text-black">
+      <div className="min-h-screen bg-black text-white overflow-hidden font-mono selection:bg-white selection:text-black px-4 md:px-8 lg:px-12 pb-12">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0">
             <Image
@@ -156,7 +156,7 @@ const TokenBurnPage = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.8 }}
               >
-                TOKEN BURNER
+                BURN TOKEN
               </motion.h1>
               <motion.div
                 initial={{ opacity: 0, scaleX: 0 }}
@@ -169,16 +169,54 @@ const TokenBurnPage = () => {
 
           {!isConnected ? (
             <motion.div 
-              className="flex flex-col max-w-[1500px] p-5 mx-auto items-center justify-center text-center py-32 px-8 bg-black rounded-xl border-2 border-white/20 relative overflow-hidden"
+              className="flex flex-col max-w-[1500px] p-5 mx-auto items-center justify-center text-center py-32 px-4 sm:px-8 pb-16 bg-black bg-opacity-20 rounded-xl border-2 border-white/20 relative overflow-hidden"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="w-[250px] h-[250px] rounded-full border border-white/05"></div>
-                  <div className="w-[700px] h-[700px] rounded-full border border-white/05 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                  <div className="w-[800px] h-[800px] rounded-full border border-white/03 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                  <motion.div 
+                    className="w-[500px] h-[500px] rounded-full border border-white/05 relative"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  >
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div 
+                        key={`arrow-cw-${i}`}
+                        className="absolute top-0 left-1/2 w-4 h-4 transform -translate-x-1/2 -translate-y-1/2"
+                        style={{ transform: `rotate(${i * 45}deg)` }}
+                      >
+                        <div className="w-4 h-4 text-white/50">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 12h14M12 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="w-[600px] h-[600px] rounded-full border border-white/05 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                  >
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div 
+                        key={`arrow-ccw-${i}`}
+                        className="absolute top-0 left-1/2 w-6 h-6 transform -translate-x-1/2 -translate-y-1/2"
+                        style={{ transform: `rotate(${i * 30}deg)` }}
+                      >
+                        <div className="w-6 h-6 text-white/30">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M19 12H5M12 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                  
+                  <div className="w-[700px] h-[700px] rounded-full border border-white/03 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
                 </div>
 
                 {Array.from({ length: 24 }).map((_, i) => (
@@ -245,44 +283,40 @@ const TokenBurnPage = () => {
                 <div className="relative inline-block mb-6">
                   <div className="absolute -inset-4 bg-white/10 rounded-full blur-md"></div>
                 </div>
-                <h2 className="text-4xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                  PEDRO X BURN
+                <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                  BURN
                 </h2>
               </motion.div>
               
-              <div className="relative z-10 w-full max-w-md space-y-4">
+              <div className="relative z-10 w-full flex flex-col items-center space-y-4">
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="flex items-center justify-center gap-4"
+                  className="flex items-center justify-center gap-4 w-full max-w-xs"
                 >
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20"></div>
                   <span className="text-white/50 text-sm">CHOOSE WALLET</span>
                   <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
                 </motion.div>
                 
-                <motion.button
-                  onClick={() => connectWallet("keplr")}
-                  disabled={isLoading && activeWalletType !== "keplr"}
-                  className={`w-full px-6 py-4 rounded-xl text-lg font-medium transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
-                    isLoading && activeWalletType === "keplr" 
-                      ? "bg-white/10 border-2 border-white/20" 
-                      : "bg-black border-2 border-white/20 hover:border-white/40 shadow-lg"
-                  }`}
-                  whileHover={{ 
-                    scale: isLoading && activeWalletType === "keplr" ? 1 : 1.02,
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {isLoading && activeWalletType === "keplr" ? (
-                    <span className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
-                      CONNECTING...
-                    </span>
-                  ) : (
-                    <>
-                      <span className="flex items-center justify-center relative z-10">
+                <div className="flex flex-col items-center space-y-4 w-full max-w-xs">
+                  <motion.button
+                    onClick={() => connectWallet("keplr")}
+                    disabled={isLoading && activeWalletType !== "keplr"}
+                    className={`w-full rounded-lg text-black bg-white hover:bg-black hover:text-white font-weight-600 font-medium border border-white/50 hover:border-white transition-all duration-300 py-3 px-4 ${
+                      isLoading && activeWalletType === "keplr" ? 'opacity-70' : ''
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {isLoading && activeWalletType === "keplr" ? (
+                      <span className="flex items-center justify-center">
+                        <span className="loading-spinner mr-2"></span>
+                        CONNECTING...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center font-bold">
                         <img 
                           src="/keplr logo.png" 
                           alt="Keplr Logo" 
@@ -293,32 +327,25 @@ const TokenBurnPage = () => {
                         />
                         CONNECT KEPLR
                       </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-                    </>
-                  )}
-                </motion.button>
-                
-                <motion.button
-                  onClick={() => connectWallet("leap")}
-                  disabled={isLoading && activeWalletType !== "leap"}
-                  className={`w-full px-6 py-4 rounded-xl text-lg font-medium transition-all duration-300 flex items-center justify-center relative overflow-hidden ${
-                    isLoading && activeWalletType === "leap" 
-                      ? "bg-white/10 border-2 border-white/20" 
-                      : "bg-black border-2 border-white/20 hover:border-white/40 shadow-lg"
-                  }`}
-                  whileHover={{ 
-                    scale: isLoading && activeWalletType === "leap" ? 1 : 1.02,
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {isLoading && activeWalletType === "leap" ? (
-                    <span className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
-                      CONNECTING...
-                    </span>
-                  ) : (
-                    <>
-                      <span className="flex items-center justify-center relative z-10">
+                    )}
+                  </motion.button>
+                  
+                  <motion.button
+                    onClick={() => connectWallet("leap")}
+                    disabled={isLoading && activeWalletType !== "leap"}
+                    className={`w-full rounded-lg text-black bg-white hover:bg-black hover:text-white font-weight-600 font-medium border border-white/50 hover:border-white transition-all duration-300 py-3 px-4 ${
+                      isLoading && activeWalletType === "leap" ? 'opacity-70' : ''
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {isLoading && activeWalletType === "leap" ? (
+                      <span className="flex items-center justify-center">
+                        <span className="loading-spinner mr-2"></span>
+                        CONNECTING...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center font-bold">
                         <img 
                           src="/leap logo.png" 
                           alt="Leap Logo" 
@@ -329,10 +356,9 @@ const TokenBurnPage = () => {
                         />
                         CONNECT LEAP
                       </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-                    </>
-                  )}
-                </motion.button>
+                    )}
+                  </motion.button>
+                </div>
               </div>
 
               <motion.div 
@@ -365,7 +391,7 @@ const TokenBurnPage = () => {
               </motion.div>
             </motion.div>
           ) : (
-            <section className="relative py-8 px-4 mx-auto max-w-[1500px]">
+            <section className="relative py-8 px-4 sm:px-6 mx-auto max-w-[1500px]">
               <div className="flex justify-end mb-8">
                 <motion.button 
                   onClick={handleDisconnect}
@@ -378,99 +404,101 @@ const TokenBurnPage = () => {
               </div>
 
               <motion.div 
-                className="bg-black rounded-xl overflow-hidden border border-white/20 mb-8"
+                className="bg-black rounded-xl overflow-hidden border border-white/20 mb-8 overflow-x-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <table className="w-full">
-                  <thead className="bg-white/5 border-b border-white/20">
-                    <tr>
-                      <th className="px-6 py-4 text-left w-12"></th>
-                      <th className="px-6 py-4 text-left">Token</th>
-                      <th className="px-6 py-4 text-left">Address</th>
-                      <th className="px-6 py-4 text-right">Balance</th>
-                      <th className="px-6 py-4 text-right">Burn Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tokens.map((token, index) => (
-                      <motion.tr 
-                        key={token.address} 
-                        className={`border-b border-white/5 ${index % 2 === 0 ? 'bg-black' : 'bg-black/80'}`}
-                        whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <td className="px-6 py-4">
-                          <motion.button
-                            onClick={() => toggleTokenSelection(token.address)}
-                            className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
-                              selectedTokens.includes(token.address) 
-                                ? 'bg-white shadow-lg' 
-                                : 'border border-white/30 hover:border-white'
-                            }`}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            {selectedTokens.includes(token.address) && (
-                              <FiCheck className="text-black" />
-                            )}
-                          </motion.button>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                              {token.symbol.charAt(0)}
+                <div className="min-w-[800px]">
+                  <table className="w-full">
+                    <thead className="bg-white/5 border-b border-white/20">
+                      <tr>
+                        <th className="px-6 py-4 text-left w-12"></th>
+                        <th className="px-6 py-4 text-left">Token</th>
+                        <th className="px-6 py-4 text-left">Address</th>
+                        <th className="px-6 py-4 text-right">Balance</th>
+                        <th className="px-6 py-4 text-right">Burn Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tokens.map((token, index) => (
+                        <motion.tr 
+                          key={token.address} 
+                          className={`border-b border-white/5 ${index % 2 === 0 ? 'bg-black' : 'bg-black/80'}`}
+                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <td className="px-6 py-4">
+                            <motion.button
+                              onClick={() => toggleTokenSelection(token.address)}
+                              className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
+                                selectedTokens.includes(token.address) 
+                                  ? 'bg-white shadow-lg' 
+                                  : 'border border-white/30 hover:border-white'
+                              }`}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              {selectedTokens.includes(token.address) && (
+                                <FiCheck className="text-black" />
+                              )}
+                            </motion.button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                                {token.symbol.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{token.name}</div>
+                                <div className="text-white/50 text-sm">{token.symbol}</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-medium">{token.name}</div>
-                              <div className="text-white/50 text-sm">{token.symbol}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white/50">
+                                {token.native ? 'Native' : token.address}
+                              </span>
+                              {!token.native && (
+                                <motion.button 
+                                  className="text-white/70 hover:text-white"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                >
+                                  <FiExternalLink size={14} />
+                                </motion.button>
+                              )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/50">
-                              {token.native ? 'Native' : token.address}
-                            </span>
-                            {!token.native && (
-                              <motion.button 
-                                className="text-white/70 hover:text-white"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                <FiExternalLink size={14} />
-                              </motion.button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono">
-                          {token.amount}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-end">
-                            <motion.input
-                              type="number"
-                              value={token.burnAmount}
-                              onChange={(e) => updateTokenAmount(token.address, e.target.value)}
-                              className="bg-white/5 border border-white/20 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-                              min="0"
-                              max={token.amount}
-                              step={1 / (10 ** token.decimals)}
-                              whileFocus={{ scale: 1.02 }}
-                            />
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </td>
+                          <td className="px-6 py-4 text-right font-mono">
+                            {token.amount}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex justify-end">
+                              <motion.input
+                                type="number"
+                                value={token.burnAmount}
+                                onChange={(e) => updateTokenAmount(token.address, e.target.value)}
+                                className="bg-white/5 border border-white/20 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                                min="0"
+                                max={token.amount}
+                                step={1 / (10 ** token.decimals)}
+                                whileFocus={{ scale: 1.02 }}
+                              />
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </motion.div>
 
               <div className="flex justify-center mb-8">
                 <motion.button
                   onClick={handleBurn}
                   disabled={selectedTokens.length === 0}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-xl text-lg font-bold transition-all relative overflow-hidden ${
+                  className={`flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-lg font-bold transition-all relative overflow-hidden ${
                     selectedTokens.length === 0
                       ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/20'
                       : 'bg-white text-black hover:bg-white/90 shadow-lg border border-white'
@@ -499,7 +527,7 @@ const TokenBurnPage = () => {
 
               {selectedTokens.length > 0 && (
                 <motion.div 
-                  className="mt-6 p-6 bg-black border border-white/20 rounded-lg"
+                  className="mt-6 p-4 sm:p-6 bg-black border border-white/20 rounded-lg mx-2 sm:mx-0"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
@@ -539,6 +567,21 @@ const TokenBurnPage = () => {
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .loading-spinner {
+          display: inline-block;
+          width: 1rem;
+          height: 1rem;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          border-top-color: white;
+          animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 };

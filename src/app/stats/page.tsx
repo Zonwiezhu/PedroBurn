@@ -1,16 +1,16 @@
 'use client';
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import Head from "next/head";
-import Image from "next/image";
-import { useState, useEffect } from 'react';
-import { FaFire, FaCoins, FaSync, FaUsers, FaExternalLinkAlt } from "react-icons/fa";
+import { useState, useEffect, useRef } from 'react';
+import { FaFire, FaCoins, FaUsers, FaPercentage, FaSyncAlt } from "react-icons/fa";
 
-export default function PedroBurnTracker() {
+export default function PedroBurnStats() {
   const [displayedNumber, setDisplayedNumber] = useState(0);
   const [lastUpdated, setLastUpdated] = useState('');
   const targetNumber = 2773123212;
   const controls = useAnimation();
 
+  // Stats data
   const holders = 3568;
   const totalSupply = 10000000000;
   const burnedAmount = targetNumber;
@@ -20,187 +20,201 @@ export default function PedroBurnTracker() {
   useEffect(() => {
     setLastUpdated(new Date().toLocaleString());
     
-    const animateCountUp = async () => {
-      await controls.start("visible");
+    const duration = 5; // 5 seconds count-up
+    const startTime = Date.now();
+    const endTime = startTime + duration * 1000;
+    
+    const updateNumber = () => {
+      const now = Date.now();
+      const progress = Math.min(1, (now - startTime) / (endTime - startTime));
+      // Ease-out function for smoother ending
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentNumber = Math.floor(easedProgress * targetNumber);
+      setDisplayedNumber(currentNumber);
       
-      const duration = 5; 
-      const startTime = Date.now();
-      const endTime = startTime + duration * 1000;
-      
-      const updateNumber = () => {
-        const now = Date.now();
-        const progress = Math.min(1, (now - startTime) / (endTime - startTime));
-        const currentNumber = Math.floor(progress * targetNumber);
-        setDisplayedNumber(currentNumber);
-        
-        if (now < endTime) {
-          requestAnimationFrame(updateNumber);
-        } else {
-          setDisplayedNumber(targetNumber);
-        }
-      };
-      
-      requestAnimationFrame(updateNumber);
+      if (now < endTime) {
+        requestAnimationFrame(updateNumber);
+      } else {
+        setDisplayedNumber(targetNumber);
+      }
     };
     
-    animateCountUp();
-  }, [controls]);
+    updateNumber();
+  }, []);
 
   const handleRefresh = () => {
     setLastUpdated(new Date().toLocaleString());
-    
-    setDisplayedNumber(0);
-    controls.start("hidden").then(() => {
-      controls.start("visible");
-      const duration = 5;
-      const startTime = Date.now();
-      const endTime = startTime + duration * 1000;
-      
-      const updateNumber = () => {
-        const now = Date.now();
-        const progress = Math.min(1, (now - startTime) / (endTime - startTime));
-        const currentNumber = Math.floor(progress * targetNumber);
-        setDisplayedNumber(currentNumber);
-        
-        if (now < endTime) {
-          requestAnimationFrame(updateNumber);
-        } else {
-          setDisplayedNumber(targetNumber);
-        }
-      };
-      
-      requestAnimationFrame(updateNumber);
+    controls.start({
+      rotate: 360,
+      transition: { duration: 0.8 }
+    }).then(() => {
+      controls.set({ rotate: 0 });
     });
   };
 
   return (
     <>
       <Head>
-        <title>BURN STATS</title>
+        <title>PEDRO BURN STATS</title>
         <meta name="description" content="Track the total amount of PEDRO tokens burned" />
       </Head>
 
-      <div className="min-h-screen bg-black text-white overflow-hidden font-mono selection:bg-white selection:text-black">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0">
-            <Image
-              src="/wallpaper.webp"
-              alt="Background texture"
-              layout="fill"
-              objectFit="cover"
-              className="opacity-20 mix-blend-overlay"
-              priority
-            />
-          </div>
-        </div>
+      <div 
+        className="min-h-screen text-white overflow-hidden font-mono relative"
+        style={{
+          backgroundImage: "url('/wallpaper.webp')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed"
+        }}
+      >
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/80 z-0"></div>
 
-        <section className="flex items-center justify-center py-12 text-center relative overflow-hidden">
+        <div className="container mx-auto px-4 py-12 relative z-10">
+          {/* Header */}
           <motion.div
-            initial={{ opacity: 0, y: -50 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="px-6 max-w-4xl relative z-10"
+            transition={{ duration: 0.5 }}
+            className="text-center mb-16"
           >
-            <motion.h1
-              className="text-4xl md:text-7xl font-bold mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              PEDRO STATS
-            </motion.h1>
             <motion.div
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              transition={{ delay: 0.2, duration: 1.2, ease: "circOut" }}
-              className="h-px w-full bg-gradient-to-r from-transparent via-white to-transparent"
+              whileHover={{ scale: 1.05 }}
+              className="inline-block"
+            >
+              <h1 className="text-4xl md:text-6xl font-bold mb-4">
+                PEDRO BURN STATS
+              </h1>
+            </motion.div>
+            <motion.div 
+              className="h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-white to-transparent"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.3, duration: 1 }}
             />
           </motion.div>
-        </section>
 
-        <div className="relative z-10 p-6 max-w-[1500px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-black/50 rounded-xl border border-white/10 backdrop-blur-sm mx-auto p-8"
-          >
-            <div className="flex flex-col items-center">
-              <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 p-5 rounded-full mb-6 shadow-lg shadow-red-500/10">
-                <FaFire className="text-orange-400 text-4xl" />
-              </div>
-              
-              <h2 className="text-2xl font-semibold text-white mb-2">Total PEDRO Burned</h2>
-              
-              <div className="relative h-32 md:h-48 flex items-center justify-center overflow-hidden w-full">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={displayedNumber}
-                    initial={{ y: -20, opacity: 0, rotateX: 90 }}
-                    animate={{ 
-                      y: 0, 
-                      opacity: 1, 
-                      rotateX: 0,
-                      transition: { 
-                        type: "spring",
-                        stiffness: 100,
-                        damping: 10
-                      }
-                    }}
-                    exit={{ y: 20, opacity: 0, rotateX: -90 }}
-                    className="text-6xl md:text-8xl font-bold text-white mb-4"
-                  >
-                    {displayedNumber.toLocaleString()}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-              <div className="text-xl text-white/80 mb-8">PEDRO Tokens</div>
-
-              {/* Stats Grid */}
-              <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <motion.div 
-                  className="bg-black/40 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all"
-                  whileHover={{ y: -5 }}
+          {/* Main Burn Counter */}
+          <div className="flex flex-col items-center mb-20 relative">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mb-8"
+            >
+              <FaFire className="text-6xl" />
+            </motion.div>
+            
+            <h2 className="text-xl md:text-2xl mb-4">TOTAL PEDRO BURNED</h2>
+            
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={displayedNumber}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="text-5xl md:text-7xl font-bold mb-2 font-mono"
                 >
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="bg-white/10 p-3 rounded-full">
-                      <FaUsers className="text-white text-xl" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">Holders</h3>
-                  </div>
-                  <div className="text-3xl font-bold text-center text-white">{holders.toLocaleString()}</div>
+                  {displayedNumber.toLocaleString()}
                 </motion.div>
-
-                <motion.div 
-                  className="bg-black/40 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all"
-                  whileHover={{ y: -5 }}
-                >
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="bg-white/10 p-3 rounded-full">
-                      <FaCoins className="text-white text-xl" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">Circulating Supply</h3>
-                  </div>
-                  <div className="text-3xl font-bold text-center text-white">{circulatingSupply.toLocaleString()}</div>
-                </motion.div>
-
-                <motion.div 
-                  className="bg-black/40 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all"
-                  whileHover={{ y: -5 }}
-                >
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="bg-white/10 p-3 rounded-full">
-                      <FaFire className="text-white text-xl" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">Top 10 Holders</h3>
-                  </div>
-                  <div className="text-3xl font-bold text-center text-white">{top10HoldersPercent}%</div>
-                </motion.div>
-              </div>
-
-              <div className="mt-8 text-white/50 text-sm">
-                <p>Last updated: {lastUpdated || 'Loading...'}</p>              
-              </div>
+              </AnimatePresence>
             </div>
+            
+            <div className="text-lg">PEDRO TOKENS</div>
+            
+            <motion.div 
+              className="w-full max-w-md h-4 bg-gray-800 rounded-full mt-6 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <motion.div 
+                className="h-full bg-gradient-to-r from-gray-300 to-white"
+                initial={{ width: 0 }}
+                animate={{ width: `${(burnedAmount / totalSupply) * 100}%` }}
+                transition={{ delay: 0.8, duration: 1.5, type: 'spring' }}
+              />
+            </motion.div>
+            <div className="text-sm mt-2 text-gray-300">
+              {((burnedAmount / totalSupply) * 100).toFixed(2)}% of total supply burned
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Holders Card */}
+            <motion.div 
+              className="border border-white/20 bg-black/50 p-6 rounded-lg backdrop-blur-sm"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              whileHover={{ y: -5 }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-full border border-white/20">
+                  <FaUsers className="text-xl" />
+                </div>
+                <h3 className="text-xl">HOLDERS</h3>
+              </div>
+              <div className="text-3xl font-mono">{holders.toLocaleString()}</div>
+            </motion.div>
+
+            {/* Circulating Supply Card */}
+            <motion.div 
+              className="border border-white/20 bg-black/50 p-6 rounded-lg backdrop-blur-sm"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              whileHover={{ y: -5 }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-full border border-white/20">
+                  <FaCoins className="text-xl" />
+                </div>
+                <h3 className="text-xl">CIRCULATING SUPPLY</h3>
+              </div>
+              <div className="text-3xl font-mono">{circulatingSupply.toLocaleString()}</div>
+            </motion.div>
+
+            {/* Top 10 Holders Card */}
+            <motion.div 
+              className="border border-white/20 bg-black/50 p-6 rounded-lg backdrop-blur-sm"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              whileHover={{ y: -5 }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-full border border-white/20">
+                  <FaPercentage className="text-xl" />
+                </div>
+                <h3 className="text-xl">TOP 10 HOLDERS</h3>
+              </div>
+              <div className="text-3xl font-mono">{top10HoldersPercent}%</div>
+            </motion.div>
+          </div>
+
+          {/* Last Updated */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="text-center mt-12 text-white/80 text-sm flex justify-center items-center gap-2"
+          >
+            <button 
+              onClick={handleRefresh}
+              className="p-1 rounded-full hover:bg-white/20 transition-colors"
+              aria-label="Refresh data"
+            >
+              <motion.div
+                animate={controls}
+              >
+                <FaSyncAlt />
+              </motion.div>
+            </button>
+            <span>Last updated: {lastUpdated || 'Loading...'}</span>
           </motion.div>
         </div>
       </div>
