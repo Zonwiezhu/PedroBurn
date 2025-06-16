@@ -471,7 +471,7 @@ const TokenBurnPage = () => {
                 <div className="flex gap-2">
                   <motion.button 
                     onClick={handleDisconnect}
-                    className="px-4 py-2 bg-transparent hover:bg-white/10 rounded-lg transition-all duration-300 border border-white/50 hover:border-white text-white font-medium"
+                    className="px-4 py-2 bg-white text-black hover:text-white hover:bg-black rounded-lg transition-all duration-300 font-medium"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -481,12 +481,74 @@ const TokenBurnPage = () => {
               </div>
 
               <motion.div 
-                className="bg-black rounded-xl overflow-hidden border border-white/20 mb-8 overflow-x-auto"
+                className="bg-black rounded-xl overflow-hidden border border-white/20 mb-8"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="min-w-[800px]">
+                <div className="md:hidden">
+                  {tokens.map((token) => (
+                    <motion.div 
+                      key={token.address}
+                      className="border-b border-white/10 last:border-b-0 p-4"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => toggleTokenSelection(token.address)}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
+                              selectedTokens.includes(token.address) 
+                                ? 'bg-white shadow-lg' 
+                                : 'border border-white/30 hover:border-white'
+                            }`}
+                          >
+                            {selectedTokens.includes(token.address) && (
+                              <FiCheck className="text-black" />
+                            )}
+                          </button>
+                          <div>
+                            <div className="font-medium">{token.name}</div>
+                            <div className="text-white/50 text-sm">{token.symbol}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-white/50 text-sm mb-1">Address</div>
+                          <div className="text-sm flex items-center gap-1">
+                            {token.native ? 'Native' : `${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
+                            {!token.native && (
+                              <button className="text-white/70 hover:text-white">
+                                <FiExternalLink size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-white/50 text-sm mb-1">Balance</div>
+                          <div className="text-sm font-mono">{token.amount}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="text-white/50 text-sm mb-1">Burn Amount</div>
+                        <input
+                          type="number"
+                          value={token.burnAmount}
+                          onChange={(e) => updateTokenAmount(token.address, e.target.value)}
+                          className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                          min="0"
+                          max={token.amount}
+                          step={1 / (10 ** token.decimals)}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block">
                   <table className="w-full">
                     <thead className="bg-white/5 border-b border-white/20">
                       <tr>
@@ -498,7 +560,7 @@ const TokenBurnPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {tokens.map((token, index) => (
+                      {tokens.map((token) => (
                         <motion.tr 
                           key={token.address} 
                         >
