@@ -424,9 +424,6 @@ const TokenBurnPage = () => {
                       {tokens.map((token, index) => (
                         <motion.tr 
                           key={token.address} 
-                          className={`border-b border-white/5 ${index % 2 === 0 ? 'bg-black' : 'bg-black/80'}`}
-                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
-                          transition={{ duration: 0.2 }}
                         >
                           <td className="px-6 py-4">
                             <motion.button
@@ -494,37 +491,6 @@ const TokenBurnPage = () => {
                 </div>
               </motion.div>
 
-              <div className="flex justify-center mb-8">
-                <motion.button
-                  onClick={handleBurn}
-                  disabled={selectedTokens.length === 0}
-                  className={`flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-lg font-bold transition-all relative overflow-hidden ${
-                    selectedTokens.length === 0
-                      ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/20'
-                      : 'bg-white text-black hover:bg-white/90 shadow-lg border border-white'
-                  }`}
-                  whileHover={selectedTokens.length > 0 ? { scale: 1.05 } : {}}
-                  whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
-                >
-                  <FaFire className="" />
-                  Burn Selected Tokens
-                  {selectedTokens.length > 0 && (
-                    <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
-                      {selectedTokens.length}
-                    </span>
-                  )}
-                  {selectedTokens.length > 0 && (
-                    <motion.div 
-                      className="absolute inset-0 overflow-hidden"
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5"></div>
-                    </motion.div>
-                  )}
-                </motion.button>
-              </div>
-
               {selectedTokens.length > 0 && (
                 <motion.div 
                   className="mt-6 p-4 sm:p-6 bg-black border border-white/20 rounded-lg mx-2 sm:mx-0"
@@ -563,6 +529,37 @@ const TokenBurnPage = () => {
                   </ul>
                 </motion.div>
               )}
+
+              <div className="flex justify-center m-8">
+                <motion.button
+                  onClick={handleBurn}
+                  disabled={selectedTokens.length === 0}
+                  className={`flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-lg font-bold transition-all relative overflow-hidden ${
+                    selectedTokens.length === 0
+                      ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/20'
+                      : 'bg-white text-black hover:bg-white/90 shadow-lg border border-white'
+                  }`}
+                  whileHover={selectedTokens.length > 0 ? { scale: 1.05 } : {}}
+                  whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
+                >
+                  <FaFire className="" />
+                  Burn Selected Tokens
+                  {selectedTokens.length > 0 && (
+                    <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
+                      {selectedTokens.length}
+                    </span>
+                  )}
+                  {selectedTokens.length > 0 && (
+                    <motion.div 
+                      className="absolute inset-0 overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5"></div>
+                    </motion.div>
+                  )}
+                </motion.button>
+              </div>
             </section>
           )}
         </div>

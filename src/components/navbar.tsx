@@ -128,7 +128,7 @@ const Navbar = () => {
               {[
                 { href: "/burn", label: "TOKEN BURN" },
                 { href: "/stats", label: "PEDRO STATS" },
-                { href: "/reason", label: "REASON PEDRO" },
+                { href: "/reason", label: "WHY PEDRO BURN" },
                 { href: "https://pedroinjraccoon.online/", label: "MAIN" },
               ].map((item) => (
                 <li
