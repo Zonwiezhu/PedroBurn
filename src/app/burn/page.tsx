@@ -568,44 +568,49 @@ const TokenBurnPage = () => {
                 </div>
               </motion.div>
 
-              {selectedTokens.length > 0 && (
-                <motion.div 
-                  className="mt-6 p-4 sm:p-6 bg-black border border-white/20 rounded-lg mx-2 sm:mx-0"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="font-bold mb-4 text-xl">
-                    BURN SUMMARY
-                  </h3>
-                  <ul className="space-y-3">
-                    {tokens
-                      .filter(token => selectedTokens.includes(token.address))
-                      .map(token => {
-                        const summary = getBurnSummary(token.amount, token.burnAmount);
-                        return (
-                          <motion.li 
-                            key={token.address} 
-                            className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm">
-                                {token.symbol.charAt(0)}
-                              </div>
-                              <span>{token.name} ({token.symbol})</span>
+             {selectedTokens.length > 0 && (
+              <motion.div 
+                className="mt-6 p-4 sm:p-6 bg-black border border-white/20 rounded-lg mx-2 sm:mx-0"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3 className="font-bold mb-4 text-xl">
+                  BURN SUMMARY
+                </h3>
+                <ul className="space-y-3">
+                  {tokens
+                    .filter(token => selectedTokens.includes(token.address))
+                    .map(token => {
+                      const summary = getBurnSummary(token.amount, token.burnAmount);
+                      return (
+                        <motion.li 
+                          key={token.address} 
+                          className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm">
+                              {token.symbol.charAt(0)}
                             </div>
-                            <span className="font-mono">
+                            <span className="truncate max-w-[100px] sm:max-w-none">{token.symbol}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="font-mono text-sm sm:text-base">
+                              {summary.actualBurn}
+                            </span>
+                            <span className="text-xs text-white/50 hidden sm:block">
                               {summary.display}
                             </span>
-                          </motion.li>
-                        );
-                      })}
-                  </ul>
-                </motion.div>
-              )}
+                          </div>
+                        </motion.li>
+                      );
+                    })}
+                </ul>
+              </motion.div>
+            )}
 
               <div className="flex justify-center m-8">
                 <motion.button
