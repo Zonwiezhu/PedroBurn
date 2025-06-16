@@ -468,7 +468,7 @@ export default function PedroBurnBenefits() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              WHY BURN
+              REASON
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}
