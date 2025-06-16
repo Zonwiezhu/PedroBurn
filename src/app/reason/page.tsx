@@ -271,7 +271,7 @@ const PriceReductionChart = () => {
     { milestone: '800M Burned', burned: 800, reduction: 96.875, price: '3.125%', priceValue: 0.03125 },
   ];
 
-  const originalPrice = 100000; // 100k $PEDRO
+  const originalPrice = 100000;
 
   return (
     <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
@@ -297,13 +297,13 @@ const PriceReductionChart = () => {
           type="number" 
           hide={true}
           xAxisId="burned-axis"
-          domain={[0, 1000]}
+          domain={[0, 100]}
         />
         
         <YAxis 
           dataKey="milestone" 
           type="category" 
-          width={isMobile ? 80 : 100}
+          width={isMobile ? 50 : 100}
           tick={{ fontSize: isMobile ? 8 : 10, fill: 'white' }}
           axisLine={false}
         />
@@ -354,14 +354,6 @@ const PriceReductionChart = () => {
           name="Tokens Burned"
           fill="transparent"
         >
-          <LabelList 
-            dataKey="burned" 
-            position="left" 
-            fill="#ffffff"
-            fontSize={isMobile ? 8 : 10}
-            offset={isMobile ? -30 : -60}
-            formatter={(value: number) => `${value}M $PEDRO`}
-          />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
