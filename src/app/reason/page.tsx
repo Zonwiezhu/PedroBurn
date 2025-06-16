@@ -408,14 +408,14 @@ export default function PedroBurnBenefits() {
       icon: <FaBriefcase className="text-xs md:text-sm" />,
       title: "Pedro Jobs",
       description: "Submit your CV on our platform. The PEDRO used for submissions is burned.",
-      link: "https://jobs.pedro.online",
+      link: "https://job.pedroinjraccoon.online/uploadcv",
       linkText: "Pedro Jobs",
     },
     {
       icon: <FaPalette className="text-xs md:text-sm" />,
       title: "NFT Generator",
       description: "Generate NFT with the layers. The PEDRO will be burned.",
-      link: "https://nft.pedro.online",
+      link: "https://art.pedroinjraccoon.online/nftgenerator",
       linkText: "Create NFT",
     },
     {
