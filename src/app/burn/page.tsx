@@ -68,7 +68,9 @@ const TokenBurnPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openExplorer = () => {
-    window.open("https://explorer.injective.network/account/inj1x6u08aa3plhk3utjk7wpyjkurtwnwp6dhudh0j/", "_blank");
+    if (walletAddress) {
+      window.open(`https://explorer.injective.network/account/${walletAddress}/`, "_blank");
+    }
   };
 
   useEffect(() => {
@@ -451,7 +453,7 @@ const TokenBurnPage = () => {
               <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center space-x-2">
                   <button 
-                    onClick={openExplorer}
+                    onClick={walletAddress ? openExplorer : undefined}
                     className="relative group focus:outline-none"
                   >
                     <div className="flex items-center space-x-1 bg-gray-900/80 hover:bg-gray-800/90 transition-all duration-300 rounded-full pl-3 pr-2 py-1 border border-white/10 hover:border-white/20 shadow-sm">
