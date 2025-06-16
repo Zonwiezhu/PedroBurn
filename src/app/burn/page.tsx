@@ -5,6 +5,11 @@ import { FaFire, FaWallet } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Head from 'next/head';
+import { Window as KeplrWindow } from "@keplr-wallet/types";
+
+declare global {
+  interface Window extends KeplrWindow {}
+}
 
 interface Token {
   name: string;
@@ -14,6 +19,13 @@ interface Token {
   burnAmount: string;
   decimals: number;
   native?: boolean;
+}
+
+interface PedroApiResponse {
+  wallet: string;
+  nft_hold: number;
+  token_hold: number;
+  check: string; 
 }
 
 const TokenBurnPage = () => {
@@ -51,6 +63,13 @@ const TokenBurnPage = () => {
   const [activeWalletType, setActiveWalletType] = useState<"keplr" | "leap" | null>(null);
   const [currentPedroImage, setCurrentPedroImage] = useState(1);
   const [useAlternateWallpaper, setUseAlternateWallpaper] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [modalMessage, setModalMessage] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openExplorer = () => {
+    window.open("https://explorer.injective.network/account/inj1x6u08aa3plhk3utjk7wpyjkurtwnwp6dhudh0j/", "_blank");
+  };
 
   useEffect(() => {
     if (!isConnected) {
@@ -63,16 +82,50 @@ const TokenBurnPage = () => {
   }, [isConnected]);
 
   const connectWallet = async (walletType: "keplr" | "leap") => {
-      setActiveWalletType(walletType);
-      setIsLoading(true);
+    setActiveWalletType(walletType);
+    const wallet = walletType === "leap" ? window.leap : window.keplr;
+    const chainId = "injective-1";
+  
+    if (!wallet) {
+      setModalMessage(`Please install the ${walletType} extension!`);
+      setIsModalOpen(true);
+      setActiveWalletType(null);
+      return;
+    }
+  
+    setIsLoading(true);
+  
+    try {
+      await wallet.enable(chainId);
+      const offlineSigner = wallet.getOfflineSigner(chainId);
+      const accounts = await offlineSigner.getAccounts();
+      const address = accounts[0].address;
+
+      const message = "Welcome to Token Burner!\nBurn tokens with style while cleaning up your wallet and getting rid of unwanted coins effortlessly! ~ PEDRO THE RACCOON";
+      await wallet.signArbitrary(chainId, address, message);
+
+      localStorage.setItem("connectedWalletType", walletType);
+      localStorage.setItem("connectedWalletAddress", address);
+      setWalletAddress(address);
       
-      try {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          setIsConnected(true);
-      } finally {
-          setIsLoading(false);
-          setActiveWalletType(null);
+      const response = await fetch(`https://api.pedroinjraccoon.online/check_pedro/${address}/`);
+      const result: PedroApiResponse = await response.json();
+
+      if (result.check === "yes") {
+        setIsConnected(true);
+        localStorage.setItem('nft_hold', result.nft_hold.toString());
+        localStorage.setItem('token_hold', result.token_hold.toString());
+      } else {
+        setModalMessage("You need to hold PEDRO tokens or NFTs to use the burner");
+        setIsModalOpen(true);
       }
+    } catch (error) {
+      setModalMessage(error instanceof Error ? error.message : "An unknown error occurred");
+      setIsModalOpen(true);
+    } finally {
+      setIsLoading(false);
+      setActiveWalletType(null);
+    }
   };
 
   const toggleTokenSelection = (tokenAddress: string) => {
@@ -94,6 +147,9 @@ const TokenBurnPage = () => {
   const handleDisconnect = () => {
     setIsConnected(false);
     setSelectedTokens([]);
+    setWalletAddress(null);
+    localStorage.removeItem("connectedWalletType");
+    localStorage.removeItem("connectedWalletAddress");
   };
 
   const handleBurn = () => {
@@ -392,15 +448,36 @@ const TokenBurnPage = () => {
             </motion.div>
           ) : (
             <section className="relative py-8 px-4 sm:px-6 mx-auto max-w-[1500px]">
-              <div className="flex justify-end mb-8">
-                <motion.button 
-                  onClick={handleDisconnect}
-                  className="px-4 py-2 bg-transparent hover:bg-white/10 rounded-lg transition-all duration-300 border border-white hover:border-white text-white font-medium"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Disconnect
-                </motion.button>
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={openExplorer}
+                    className="relative group focus:outline-none"
+                  >
+                    <div className="flex items-center space-x-1 bg-gray-900/80 hover:bg-gray-800/90 transition-all duration-300 rounded-full pl-3 pr-2 py-1 border border-white/10 hover:border-white/20 shadow-sm">
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mr-2"></div>
+                        <span className="text-xs font-mono text-white/90">
+                          {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+                        </span>
+                      </div>
+                      <FiExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />
+                    </div>
+                    <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                      View on Explorer
+                    </div>
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <motion.button 
+                    onClick={handleDisconnect}
+                    className="px-4 py-2 bg-transparent hover:bg-white/10 rounded-lg transition-all duration-300 border border-white/50 hover:border-white text-white font-medium"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Disconnect
+                  </motion.button>
+                </div>
               </div>
 
               <motion.div 
@@ -543,7 +620,7 @@ const TokenBurnPage = () => {
                   whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
                 >
                   <FaFire className="" />
-                  Burn Selected Tokens
+                  Burn Tokens
                   {selectedTokens.length > 0 && (
                     <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
                       {selectedTokens.length}
@@ -563,6 +640,61 @@ const TokenBurnPage = () => {
             </section>
           )}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isModalOpen ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isModalOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        >
+          {isModalOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.7 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black"
+                onClick={() => setIsModalOpen(false)}
+              />
+              
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={isModalOpen ? { scale: 1, opacity: 1, y: 0 } : { scale: 0.9, opacity: 0, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 400 }}
+                className="relative z-10 w-full max-w-md bg-gradient-to-br from-black to-gray-900 rounded-2xl overflow-hidden border border-white/10 shadow-xl"
+              >
+                <div className="p-6">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-center text-white mb-2">Notice</h3>
+                  <p className="text-gray-300 text-center mb-6">{modalMessage}</p>
+                  
+                  <div className="flex justify-center">
+                    <motion.button
+                      onClick={() => setIsModalOpen(false)}
+                      className="px-6 py-2 rounded-lg bg-white text-black hover:bg-gray-200 font-medium transition-all duration-300"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Got it
+                    </motion.button>
+                  </div>
+                </div>
+                
+                <motion.div 
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent"
+                />
+              </motion.div>
+            </>
+          )}
+        </motion.div>
       </div>
 
       <style jsx global>{`
