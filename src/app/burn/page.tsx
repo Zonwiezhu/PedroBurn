@@ -70,6 +70,15 @@ const TokenBurnPage = () => {
     : integerPart.toString();
 };
 
+const formatTokenName = (name: string) => {
+  return name.length > 40 ? `${name.substring(0, 40)}...` : name;
+};
+
+const formatDenom = (denom: string) => {
+  if (denom.length <= 8) return denom;
+  return `${denom.substring(0, 4)}...${denom.slice(-4)}`;
+};
+
 const formatNumber = (value: string, decimals: number): string => {
   const cleanValue = value.replace(/[.,]/g, '');
   
@@ -270,7 +279,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
       
       // Format the numbers with proper decimal places
       return {
-        display: `${formatNumber(amount, decimals)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
+        display: `${formatNumber(amount, 6)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
         actualBurn: formatNumber(actualBurn.toString(), decimals)
       };
     } catch (e) {
@@ -633,7 +642,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                                 )}
                               </div>
                               <div>
-                                <div className="font-medium">{token.name || token.symbol || 'Unknown Token'}</div>
+                                <div className="font-medium">{formatTokenName(token.name || token.symbol || 'Unknown Token')}</div>
                                 <div className="text-white/50 text-sm">{token.symbol || 'N/A'}</div>
                               </div>
                             </div>
@@ -770,7 +779,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="font-medium">{token.name || token.symbol || 'Unknown Token'}</div>
+                                  <div className="font-medium">{formatTokenName(token.name || token.symbol || 'Unknown Token')}</div>
                                   <div className="text-white/50 text-sm">{token.symbol || 'N/A'}</div>
                                 </div>
                               </div>
@@ -846,7 +855,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                     {tokens
                       .filter(token => selectedTokens.includes(token.denom))
                       .map(token => {
-                        const summary = getBurnSummary(token.amount, token.burnAmount);
+                        const summary = getBurnSummary(token.amount, token.burnAmount, 6);
                         return (
                           <motion.li 
                             key={token.denom} 
