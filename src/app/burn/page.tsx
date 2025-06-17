@@ -239,7 +239,7 @@ const TokenBurnPage = () => {
             </motion.div>
           </section>
 
-          {!isConnected ? (
+           {!isConnected ? (
             <motion.div 
               className="flex flex-col max-w-[1500px] p-5 mx-auto items-center justify-center text-center py-32 px-4 sm:px-8 pb-16 bg-black bg-opacity-20 rounded-xl border-2 border-white/20 relative overflow-hidden"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -267,7 +267,83 @@ const TokenBurnPage = () => {
                       </div>
                     ))}
                   </motion.div>
+                  
+                  <motion.div 
+                    className="w-[600px] h-[600px] rounded-full border border-white/05 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                  >
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div 
+                        key={`arrow-ccw-${i}`}
+                        className="absolute top-0 left-1/2 w-6 h-6 transform -translate-x-1/2 -translate-y-1/2"
+                        style={{ transform: `rotate(${i * 30}deg)` }}
+                      >
+                        <div className="w-6 h-6 text-white/30">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M19 12H5M12 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                  
+                  <div className="w-[700px] h-[700px] rounded-full border border-white/03 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
                 </div>
+
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <div 
+                    key={`radial-${i}`}
+                    className="absolute top-1/2 left-1/2 w-[200%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                    style={{
+                      transform: `translate(-50%, -50%) rotate(${i * 15}deg)`,
+                      transformOrigin: 'left center'
+                    }}
+                  ></div>
+                ))}
+
+                <div className="absolute inset-0">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div 
+                      key={`diamond-${i}`}
+                      className="absolute top-1/2 left-1/2 w-[200%] h-px bg-gradient-to-r from-transparent via-white/05 to-transparent"
+                      style={{
+                        transform: `translate(-50%, -50%) rotate(${45 + (i * 10)}deg)`,
+                        transformOrigin: 'left center',
+                        opacity: 0.3 - (i * 0.03)
+                      }}
+                    ></div>
+                  ))}
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div 
+                      key={`diamond2-${i}`}
+                      className="absolute top-1/2 left-1/2 w-[200%] h-px bg-gradient-to-r from-transparent via-white/05 to-transparent"
+                      style={{
+                        transform: `translate(-50%, -50%) rotate(${-45 - (i * 10)}deg)`,
+                        transformOrigin: 'left center',
+                        opacity: 0.3 - (i * 0.03)
+                      }}
+                    ></div>
+                  ))}
+                </div>
+
+                <div className="absolute inset-0 grid grid-cols-24 grid-rows-24 opacity-5">
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <div key={`pixel-col-${i}`} className="border-r border-white/05"></div>
+                  ))}
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <div key={`pixel-row-${i}`} className="border-b border-white/05"></div>
+                  ))}
+                </div>
+
+                <div className="absolute top-10 left-10 w-16 h-16 border-t-2 border-l-2 border-white/20"></div>
+                <div className="absolute top-10 right-10 w-16 h-16 border-t-2 border-r-2 border-white/20"></div>
+                <div className="absolute bottom-10 left-10 w-16 h-16 border-b-2 border-l-2 border-white/20"></div>
+                <div className="absolute bottom-10 right-10 w-16 h-16 border-b-2 border-r-2 border-white/20"></div>
+
+                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+                <div className="absolute top-0 left-1/2 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                <div className="absolute top-1/2 left-1/2 w-4 h-4 transform -translate-x-1/2 -translate-y-1/2 border-2 border-white/30 rounded-full"></div>
               </div>
 
               <motion.div
