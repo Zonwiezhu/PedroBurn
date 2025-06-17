@@ -50,26 +50,20 @@ const TokenBurnPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const formatFullPrecision = (value: string, decimals: number): string => {
-  // Remove all commas/periods if present
   const cleanValue = value.replace(/[.,]/g, '');
   
-  // Convert to BigInt to handle very small numbers precisely
   const bigValue = BigInt(cleanValue);
   
-  // Calculate the divisor
   const divisor = BigInt(10 ** decimals);
   
-  // Get the integer and fractional parts
   const integerPart = bigValue / divisor;
   let fractionalPart = bigValue % divisor;
   
-  // Handle negative values if needed
   if (bigValue < 0n) fractionalPart *= -1n;
   
-  // Format with full precision
   const fractionalStr = fractionalPart.toString()
     .padStart(decimals, '0')
-    .replace(/0+$/, ''); // Remove trailing zeros if desired
+    .replace(/0+$/, '');
   
   return fractionalStr.length > 0 
     ? `${integerPart},${fractionalStr}`
@@ -77,18 +71,14 @@ const TokenBurnPage = () => {
 };
 
 const formatNumber = (value: string, decimals: number): string => {
-  // Remove all commas and periods first
   const cleanValue = value.replace(/[.,]/g, '');
-  const numericValue = parseFloat(cleanValue);
   
-  // Handle invalid numbers
-  if (isNaN(numericValue)) return '0';
+  const paddedValue = cleanValue.padStart(decimals + 1, '0');
   
-  // Format with comma as decimal separator and period as thousand separator
-  return (numericValue / Math.pow(10, decimals)).toLocaleString('de-DE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  const integerPart = paddedValue.slice(0, -decimals) || '0';
+  const fractionalPart = paddedValue.slice(-decimals);
+  
+  return `${integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${fractionalPart}`;
 };
 
 const setMaxAmount = (tokenAddress: string) => {
@@ -264,25 +254,32 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
     alert(`Preparing to burn:\n${JSON.stringify(burnTransactions, null, 2)}`);
   };
 
-  const getBurnSummary = (amount: string, burnAmount: string) => {
+  const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
+    // Remove all formatting (commas) and treat as strings
     const cleanAmount = amount.replace(/,/g, '');
     const cleanBurnAmount = burnAmount.replace(/,/g, '');
     
-    const amountNum = parseFloat(cleanAmount);
-    let burnNum = parseFloat(cleanBurnAmount);
-    
-    if (isNaN(burnNum)) burnNum = 0;
-    if (burnNum < 0) burnNum = 0;
-    
-    const actualBurn = Math.min(burnNum, amountNum);
-    const remaining = Math.max(0, amountNum - actualBurn);
-    
-    return {
-      display: `${amount} - ${actualBurn.toFixed(6)} = ${remaining.toFixed(6)}`,
-      actualBurn: actualBurn.toLocaleString(undefined, {
-        maximumFractionDigits: 6
-      })
-    };
+    try {
+      // Convert to BigInt to maintain precision
+      const amountBig = BigInt(cleanAmount);
+      const burnBig = cleanBurnAmount ? BigInt(cleanBurnAmount) : 0n;
+      
+      // Calculate remaining amount
+      const actualBurn = burnBig > amountBig ? amountBig : burnBig;
+      const remaining = amountBig - actualBurn;
+      
+      // Format the numbers with proper decimal places
+      return {
+        display: `${formatNumber(amount, decimals)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
+        actualBurn: formatNumber(actualBurn.toString(), decimals)
+      };
+    } catch (e) {
+      console.error("Error in big number calculation:", e);
+      return {
+        display: "Error in calculation",
+        actualBurn: "0"
+      };
+    }
   };
 
   const formatBalance = (amount: string, decimals: number) => {
