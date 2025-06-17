@@ -14,58 +14,52 @@ declare global {
 interface Token {
   name: string;
   symbol: string;
-  address: string;
+  denom: string;
   amount: string;
   burnAmount: string;
   decimals: number;
+  human_readable_amount: string;
+  uri?: string | null;
+  description?: string;
   native?: boolean;
 }
 
-interface PedroApiResponse {
-  wallet: string;
-  nft_hold: number;
-  token_hold: number;
-  check: string; 
+interface TokenApiResponse {
+  address: string;
+  token_info: {
+    name: string;
+    symbol: string;
+    denom: string;
+    amount: string;
+    decimals: number;
+    human_readable_amount: string;
+    description: string;
+    uri?: string;
+  }[];
 }
 
 const TokenBurnPage = () => {
-  const [tokens, setTokens] = useState<Token[]>([
-    {
-      name: 'PEDRO',
-      symbol: 'PEDRO',
-      address: '0x123...456',
-      amount: '1000.00',
-      burnAmount: '0',
-      decimals: 18,
-      native: true
-    },
-    {
-      name: 'Random Shit Token',
-      symbol: 'SHIT',
-      address: '0x789...012',
-      amount: '500000.00',
-      burnAmount: '0',
-      decimals: 18
-    },
-    {
-      name: 'Another Useless Token',
-      symbol: 'USELESS',
-      address: '0x345...678',
-      amount: '25000.00',
-      burnAmount: '0',
-      decimals: 18
-    }
-  ]);
-
+  const [tokens, setTokens] = useState<Token[]>([]);
   const [selectedTokens, setSelectedTokens] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeWalletType, setActiveWalletType] = useState<"keplr" | "leap" | null>(null);
   const [currentPedroImage, setCurrentPedroImage] = useState(1);
-  const [useAlternateWallpaper, setUseAlternateWallpaper] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const formatIpfsUri = (uri: string | null | undefined): string => {
+    if (!uri) return ''; 
+    if (uri.startsWith('ipfs://')) {
+      return `https://ipfs.io/ipfs/${uri.replace('ipfs://', '')}`;
+    }
+    if (uri.includes('ipfs')) {
+      const ipfsHash = uri.split('ipfs/')[1] || uri.split('ipfs:')[1];
+      return `https://ipfs.io/ipfs/${ipfsHash}`;
+    }
+    return uri;
+  };
 
   const openExplorer = () => {
     if (walletAddress) {
@@ -78,7 +72,6 @@ const TokenBurnPage = () => {
       const interval = setInterval(() => {
         setCurrentPedroImage(prev => (prev % 24) + 1);
       }, 100);
-      
       return () => clearInterval(interval);
     }
   }, [isConnected]);
@@ -103,24 +96,29 @@ const TokenBurnPage = () => {
       const accounts = await offlineSigner.getAccounts();
       const address = accounts[0].address;
 
-      const message = "Welcome to Token Burner!\nBurn tokens with style while cleaning up your wallet and getting rid of unwanted coins effortlessly! ~ PEDRO THE RACCOON";
-      await wallet.signArbitrary(chainId, address, message);
-
       localStorage.setItem("connectedWalletType", walletType);
       localStorage.setItem("connectedWalletAddress", address);
       setWalletAddress(address);
       
-      const response = await fetch(`https://api.pedroinjraccoon.online/check_pedro/${address}/`);
-      const result: PedroApiResponse = await response.json();
-
-      if (result.check === "yes") {
-        setIsConnected(true);
-        localStorage.setItem('nft_hold', result.nft_hold.toString());
-        localStorage.setItem('token_hold', result.token_hold.toString());
-      } else {
-        setModalMessage("You need to hold PEDRO tokens or NFTs to use the burner");
-        setIsModalOpen(true);
-      }
+      const tokenResponse = await fetch(`http://127.0.0.1:8000/token_balances/${address}/`);
+      const tokenResult: TokenApiResponse = await tokenResponse.json();
+      
+      const formattedTokens = tokenResult.token_info.map(token => ({
+        name: token.name,
+        symbol: token.symbol,
+        denom: token.denom,
+        address: token.denom,
+        amount: token.human_readable_amount,
+        burnAmount: "",
+        decimals: token.decimals,
+        human_readable_amount: token.human_readable_amount,
+        uri: token.uri,
+        description: token.description,
+        native: token.denom === 'inj'
+      }));
+            
+      setTokens(formattedTokens);
+      setIsConnected(true);
     } catch (error) {
       setModalMessage(error instanceof Error ? error.message : "An unknown error occurred");
       setIsModalOpen(true);
@@ -140,7 +138,7 @@ const TokenBurnPage = () => {
 
   const updateTokenAmount = (tokenAddress: string, newAmount: string) => {
     setTokens(prev => prev.map(token => 
-      token.address === tokenAddress 
+      token.denom === tokenAddress 
         ? { ...token, burnAmount: newAmount } 
         : token
     ));
@@ -150,21 +148,29 @@ const TokenBurnPage = () => {
     setIsConnected(false);
     setSelectedTokens([]);
     setWalletAddress(null);
+    setTokens([]);
     localStorage.removeItem("connectedWalletType");
     localStorage.removeItem("connectedWalletAddress");
   };
 
   const handleBurn = () => {
-    alert(`UI Mock: Burning ${selectedTokens.length} selected tokens`);
-  };
-
-  const toggleWallpaper = () => {
-    setUseAlternateWallpaper(!useAlternateWallpaper);
+    const burnTransactions = tokens
+      .filter(token => selectedTokens.includes(token.denom))
+      .map(token => ({
+        symbol: token.symbol,
+        amount: token.burnAmount || token.human_readable_amount,
+        denom: token.denom
+      }));
+    
+    alert(`Preparing to burn:\n${JSON.stringify(burnTransactions, null, 2)}`);
   };
 
   const getBurnSummary = (amount: string, burnAmount: string) => {
-    const amountNum = parseFloat(amount.replace(',', '.'));
-    let burnNum = parseFloat(burnAmount.replace(',', '.'));
+    const cleanAmount = amount.replace(/,/g, '');
+    const cleanBurnAmount = burnAmount.replace(/,/g, '');
+    
+    const amountNum = parseFloat(cleanAmount);
+    let burnNum = parseFloat(cleanBurnAmount);
     
     if (isNaN(burnNum)) burnNum = 0;
     if (burnNum < 0) burnNum = 0;
@@ -173,9 +179,17 @@ const TokenBurnPage = () => {
     const remaining = Math.max(0, amountNum - actualBurn);
     
     return {
-      display: `${amount} - ${actualBurn.toFixed(2)} = ${remaining.toFixed(2)}`,
-      actualBurn: actualBurn.toFixed(2)
+      display: `${amount} - ${actualBurn.toFixed(6)} = ${remaining.toFixed(6)}`,
+      actualBurn: actualBurn.toLocaleString(undefined, {
+        maximumFractionDigits: 6
+      })
     };
+  };
+
+  const formatBalance = (amount: string, decimals: number) => {
+    return parseFloat(amount.replace(/,/g, '')).toLocaleString(undefined, {
+      maximumFractionDigits: decimals
+    });
   };
 
   return (
@@ -190,7 +204,7 @@ const TokenBurnPage = () => {
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0">
             <Image
-              src={useAlternateWallpaper ? "/wallpaper.webp" : "/wallpaper.webp"}
+              src="/wallpaper.webp"
               alt="Background texture"
               layout="fill"
               objectFit="cover"
@@ -253,83 +267,7 @@ const TokenBurnPage = () => {
                       </div>
                     ))}
                   </motion.div>
-                  
-                  <motion.div 
-                    className="w-[600px] h-[600px] rounded-full border border-white/05 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                  >
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <div 
-                        key={`arrow-ccw-${i}`}
-                        className="absolute top-0 left-1/2 w-6 h-6 transform -translate-x-1/2 -translate-y-1/2"
-                        style={{ transform: `rotate(${i * 30}deg)` }}
-                      >
-                        <div className="w-6 h-6 text-white/30">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M19 12H5M12 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
-                  
-                  <div className="w-[700px] h-[700px] rounded-full border border-white/03 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
                 </div>
-
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <div 
-                    key={`radial-${i}`}
-                    className="absolute top-1/2 left-1/2 w-[200%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                    style={{
-                      transform: `translate(-50%, -50%) rotate(${i * 15}deg)`,
-                      transformOrigin: 'left center'
-                    }}
-                  ></div>
-                ))}
-
-                <div className="absolute inset-0">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <div 
-                      key={`diamond-${i}`}
-                      className="absolute top-1/2 left-1/2 w-[200%] h-px bg-gradient-to-r from-transparent via-white/05 to-transparent"
-                      style={{
-                        transform: `translate(-50%, -50%) rotate(${45 + (i * 10)}deg)`,
-                        transformOrigin: 'left center',
-                        opacity: 0.3 - (i * 0.03)
-                      }}
-                    ></div>
-                  ))}
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <div 
-                      key={`diamond2-${i}`}
-                      className="absolute top-1/2 left-1/2 w-[200%] h-px bg-gradient-to-r from-transparent via-white/05 to-transparent"
-                      style={{
-                        transform: `translate(-50%, -50%) rotate(${-45 - (i * 10)}deg)`,
-                        transformOrigin: 'left center',
-                        opacity: 0.3 - (i * 0.03)
-                      }}
-                    ></div>
-                  ))}
-                </div>
-
-                <div className="absolute inset-0 grid grid-cols-24 grid-rows-24 opacity-5">
-                  {Array.from({ length: 24 }).map((_, i) => (
-                    <div key={`pixel-col-${i}`} className="border-r border-white/05"></div>
-                  ))}
-                  {Array.from({ length: 24 }).map((_, i) => (
-                    <div key={`pixel-row-${i}`} className="border-b border-white/05"></div>
-                  ))}
-                </div>
-
-                <div className="absolute top-10 left-10 w-16 h-16 border-t-2 border-l-2 border-white/20"></div>
-                <div className="absolute top-10 right-10 w-16 h-16 border-t-2 border-r-2 border-white/20"></div>
-                <div className="absolute bottom-10 left-10 w-16 h-16 border-b-2 border-l-2 border-white/20"></div>
-                <div className="absolute bottom-10 right-10 w-16 h-16 border-b-2 border-r-2 border-white/20"></div>
-
-                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
-                <div className="absolute top-0 left-1/2 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
-                <div className="absolute top-1/2 left-1/2 w-4 h-4 transform -translate-x-1/2 -translate-y-1/2 border-2 border-white/30 rounded-full"></div>
               </div>
 
               <motion.div
@@ -338,9 +276,6 @@ const TokenBurnPage = () => {
                 transition={{ delay: 0.3 }}
                 className="mb-8 relative z-10"
               >
-                <div className="relative inline-block mb-6">
-                  <div className="absolute -inset-4 bg-white/10 rounded-full blur-md"></div>
-                </div>
                 <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
                   BURN
                 </h2>
@@ -379,9 +314,6 @@ const TokenBurnPage = () => {
                           src="/keplr logo.png" 
                           alt="Keplr Logo" 
                           className="w-6 h-6 mr-3" 
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/wallet-fallback.png';
-                          }}
                         />
                         CONNECT KEPLR
                       </span>
@@ -408,9 +340,6 @@ const TokenBurnPage = () => {
                           src="/leap logo.png" 
                           alt="Leap Logo" 
                           className="w-6 h-6 mr-3" 
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/wallet-fallback.png';
-                          }}
                         />
                         CONNECT LEAP
                       </span>
@@ -435,17 +364,6 @@ const TokenBurnPage = () => {
                   className="object-contain relative z-10 grayscale contrast-125"
                   priority
                 />
-                <motion.div 
-                  className="absolute inset-0 rounded-full border-2 border-transparent"
-                  animate={{
-                    borderColor: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.3)', 'rgba(255,255,255,0.1)'],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
               </motion.div>
             </motion.div>
           ) : (
@@ -453,7 +371,7 @@ const TokenBurnPage = () => {
               <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center space-x-2">
                   <button 
-                    onClick={walletAddress ? openExplorer : undefined}
+                    onClick={openExplorer}
                     className="relative group focus:outline-none"
                   >
                     <div className="flex items-center space-x-1 bg-gray-900/80 hover:bg-gray-800/90 transition-all duration-300 rounded-full pl-3 pr-2 py-1 border border-white/10 hover:border-white/20 shadow-sm">
@@ -489,65 +407,112 @@ const TokenBurnPage = () => {
                 transition={{ duration: 0.5 }}
               >
                 <div className="md:hidden">
-                  {tokens.map((token) => (
-                    <motion.div 
-                      key={token.address}
-                      className="border-b border-white/10 last:border-b-0 p-4"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleTokenSelection(token.address)}
-                            className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
-                              selectedTokens.includes(token.address) 
-                                ? 'bg-white shadow-lg' 
-                                : 'border border-white/30 hover:border-white'
-                            }`}
-                          >
-                            {selectedTokens.includes(token.address) && (
-                              <FiCheck className="text-black" />
-                            )}
-                          </button>
+                  {tokens.map((token) => {
+                    const imageUri = token.uri ? formatIpfsUri(token.uri) : '';                    
+                    const shortenedDenom = token.native 
+                      ? 'Native' 
+                      : `${token.denom.split('/').pop()?.slice(0, 6)}...${token.denom.slice(-4)}`;
+                    const explorerLink = token.native 
+                      ? null 
+                      : `https://explorer.injective.network/asset/${encodeURIComponent(token.denom)}`;
+
+                    return (
+                      <motion.div 
+                        key={token.denom}
+                        className="border-b border-white/10 last:border-b-0 p-4"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => toggleTokenSelection(token.denom)}
+                              className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
+                                selectedTokens.includes(token.denom) 
+                                  ? 'bg-white shadow-lg' 
+                                  : 'border border-white/30 hover:border-white'
+                              }`}
+                            >
+                              {selectedTokens.includes(token.denom) && (
+                                <FiCheck className="text-black" />
+                              )}
+                            </button>
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                                {imageUri ? (
+                                  <img 
+                                    src={imageUri} 
+                                    alt={token.symbol}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const imgElement = e.target as HTMLImageElement;
+                                      imgElement.src = '';
+                                      const parent = imgElement.parentElement;
+                                      if (parent) {
+                                        const fallback = document.createElement('span');
+                                        fallback.className = 'flex items-center justify-center w-full h-full';
+                                        fallback.textContent = token.symbol.charAt(0);
+                                        parent.replaceChild(fallback, imgElement);
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="flex items-center justify-center w-full h-full">
+                                    {token.symbol.charAt(0)}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium">{token.name || token.symbol || 'Unknown Token'}</div>
+                                <div className="text-white/50 text-sm">{token.symbol || 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <div className="font-medium">{token.name}</div>
-                            <div className="text-white/50 text-sm">{token.symbol}</div>
+                            <div className="text-white/50 text-sm mb-1">Address</div>
+                            <div className="text-sm flex items-center gap-1">
+                              {explorerLink ? (
+                                <a 
+                                  href={explorerLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-white/70 hover:text-white hover:underline"
+                                >
+                                  {shortenedDenom}
+                                </a>
+                              ) : (
+                                <span className="text-white/50">{shortenedDenom}</span>
+                              )}
+                              {explorerLink && (
+                                <FiExternalLink size={14} className="text-white/50" />
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-white/50 text-sm mb-1">Balance</div>
+                            <div className="text-sm font-mono">
+                              {formatBalance(token.human_readable_amount, token.decimals)}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-white/50 text-sm mb-1">Address</div>
-                          <div className="text-sm flex items-center gap-1">
-                            {token.native ? 'Native' : `${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
-                            {!token.native && (
-                              <button className="text-white/70 hover:text-white">
-                                <FiExternalLink size={14} />
-                              </button>
-                            )}
-                          </div>
+                        <div className="mt-4">
+                          <div className="text-white/50 text-sm mb-1">Burn Amount</div>
+                          <input
+                            type="number"
+                            value={token.burnAmount}
+                            onChange={(e) => updateTokenAmount(token.denom, e.target.value)}
+                            className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                            min="0"
+                            max={token.amount}
+                            step={1 / (10 ** token.decimals)}
+                          />
                         </div>
-
-                        <div>
-                          <div className="text-white/50 text-sm mb-1">Balance</div>
-                          <div className="text-sm font-mono">{token.amount}</div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4">
-                        <div className="text-white/50 text-sm mb-1">Burn Amount</div>
-                        <input
-                          type="number"
-                          value={token.burnAmount}
-                          onChange={(e) => updateTokenAmount(token.address, e.target.value)}
-                          className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-                          min="0"
-                          max={token.amount}
-                          step={1 / (10 ** token.decimals)}
-                        />
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 <div className="hidden md:block">
@@ -562,119 +527,153 @@ const TokenBurnPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {tokens.map((token) => (
-                        <motion.tr 
-                          key={token.address} 
-                        >
-                          <td className="px-6 py-4">
-                            <motion.button
-                              onClick={() => toggleTokenSelection(token.address)}
-                              className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
-                                selectedTokens.includes(token.address) 
-                                  ? 'bg-white shadow-lg' 
-                                  : 'border border-white/30 hover:border-white'
-                              }`}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              {selectedTokens.includes(token.address) && (
-                                <FiCheck className="text-black" />
-                              )}
-                            </motion.button>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                                {token.symbol.charAt(0)}
+                      {tokens.map((token) => {
+                        const imageUri = formatIpfsUri(token.uri);
+                        const shortenedDenom = token.native 
+                          ? 'Native' 
+                          : `${token.denom.split('/').pop()?.slice(0, 6)}...${token.denom.slice(-4)}`;
+                        const explorerLink = token.native 
+                          ? null 
+                          : `https://explorer.injective.network/asset/${encodeURIComponent(token.denom)}`;
+
+                        return (
+                          <motion.tr 
+                            key={token.denom} 
+                          >
+                            <td className="px-6 py-4">
+                              <motion.button
+                                onClick={() => toggleTokenSelection(token.denom)}
+                                className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
+                                  selectedTokens.includes(token.denom) 
+                                    ? 'bg-white shadow-lg' 
+                                    : 'border border-white/30 hover:border-white'
+                                }`}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                {selectedTokens.includes(token.denom) && (
+                                  <FiCheck className="text-black" />
+                                )}
+                              </motion.button>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                                  {imageUri ? (
+                                    <img 
+                                      src={imageUri} 
+                                      alt={token.symbol}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const imgElement = e.target as HTMLImageElement;
+                                        imgElement.src = '';
+                                        const parent = imgElement.parentElement;
+                                        if (parent) {
+                                          const fallback = document.createElement('span');
+                                          fallback.className = 'flex items-center justify-center w-full h-full';
+                                          fallback.textContent = token.symbol.charAt(0);
+                                          parent.replaceChild(fallback, imgElement);
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <span className="flex items-center justify-center w-full h-full">
+                                      {token.symbol.charAt(0)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-medium">{token.name || token.symbol || 'Unknown Token'}</div>
+                                  <div className="text-white/50 text-sm">{token.symbol || 'N/A'}</div>
+                                </div>
                               </div>
-                              <div>
-                                <div className="font-medium">{token.name}</div>
-                                <div className="text-white/50 text-sm">{token.symbol}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                {explorerLink ? (
+                                  <a 
+                                    href={explorerLink} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-white/70 hover:text-white hover:underline"
+                                  >
+                                    {shortenedDenom}
+                                  </a>
+                                ) : (
+                                  <span className="text-white/50">{shortenedDenom}</span>
+                                )}
+                                {explorerLink && (
+                                  <FiExternalLink size={14} className="text-white/50" />
+                                )}
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/50">
-                                {token.native ? 'Native' : token.address}
-                              </span>
-                              {!token.native && (
-                                <motion.button 
-                                  className="text-white/70 hover:text-white"
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  <FiExternalLink size={14} />
-                                </motion.button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-right font-mono">
-                            {token.amount}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex justify-end">
-                              <motion.input
-                                type="number"
-                                value={token.burnAmount}
-                                onChange={(e) => updateTokenAmount(token.address, e.target.value)}
-                                className="bg-white/5 border border-white/20 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-                                min="0"
-                                max={token.amount}
-                                step={1 / (10 ** token.decimals)}
-                                whileFocus={{ scale: 1.02 }}
-                              />
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))}
+                            </td>
+                            <td className="px-6 py-4 text-right font-mono">
+                              {formatBalance(token.human_readable_amount, token.decimals)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex justify-end">
+                                <motion.input
+                                  type="number"
+                                  value={token.burnAmount}
+                                  onChange={(e) => updateTokenAmount(token.denom, e.target.value)}
+                                  className="bg-white/5 border border-white/20 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                                  min="0"
+                                  max={token.amount}
+                                  step={1 / (10 ** token.decimals)}
+                                  whileFocus={{ scale: 1.02 }}
+                                />
+                              </div>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </motion.div>
 
-             {selectedTokens.length > 0 && (
-              <motion.div 
-                className="mt-6 p-4 sm:p-6 bg-black border border-white/20 rounded-lg mx-2 sm:mx-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h3 className="font-bold mb-4 text-xl">
-                  BURN SUMMARY
-                </h3>
-                <ul className="space-y-3">
-                  {tokens
-                    .filter(token => selectedTokens.includes(token.address))
-                    .map(token => {
-                      const summary = getBurnSummary(token.amount, token.burnAmount);
-                      return (
-                        <motion.li 
-                          key={token.address} 
-                          className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm">
-                              {token.symbol.charAt(0)}
+              {selectedTokens.length > 0 && (
+                <motion.div 
+                  className="mt-6 p-4 sm:p-6 bg-black border border-white/20 rounded-lg mx-2 sm:mx-0"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h3 className="font-bold mb-4 text-xl">
+                    BURN SUMMARY
+                  </h3>
+                  <ul className="space-y-3">
+                    {tokens
+                      .filter(token => selectedTokens.includes(token.denom))
+                      .map(token => {
+                        const summary = getBurnSummary(token.amount, token.burnAmount);
+                        return (
+                          <motion.li 
+                            key={token.denom} 
+                            className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm">
+                                {token.symbol.charAt(0)}
+                              </div>
+                              <span className="truncate max-w-[100px] sm:max-w-none">{token.symbol}</span>
                             </div>
-                            <span className="truncate max-w-[100px] sm:max-w-none">{token.symbol}</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="font-mono text-sm sm:text-base">
-                              {summary.actualBurn}
-                            </span>
-                            <span className="text-xs text-white/50 hidden sm:block">
-                              {summary.display}
-                            </span>
-                          </div>
-                        </motion.li>
-                      );
-                    })}
-                </ul>
-              </motion.div>
-            )}
+                            <div className="flex flex-col items-end">
+                              <span className="font-mono text-sm sm:text-base">
+                                {summary.actualBurn}
+                              </span>
+                              <span className="text-xs text-white/50 hidden sm:block">
+                                {summary.display}
+                              </span>
+                            </div>
+                          </motion.li>
+                        );
+                      })}
+                  </ul>
+                </motion.div>
+              )}
 
               <div className="flex justify-center m-8">
                 <motion.button
@@ -695,21 +694,13 @@ const TokenBurnPage = () => {
                       {selectedTokens.length}
                     </span>
                   )}
-                  {selectedTokens.length > 0 && (
-                    <motion.div 
-                      className="absolute inset-0 overflow-hidden"
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5"></div>
-                    </motion.div>
-                  )}
                 </motion.button>
               </div>
             </section>
           )}
         </div>
 
+        {/* Modal */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: isModalOpen ? 1 : 0 }}
@@ -753,13 +744,6 @@ const TokenBurnPage = () => {
                     </motion.button>
                   </div>
                 </div>
-                
-                <motion.div 
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent"
-                />
               </motion.div>
             </>
           )}
