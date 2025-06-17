@@ -49,17 +49,116 @@ const TokenBurnPage = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const formatIpfsUri = (uri: string | null | undefined): string => {
-    if (!uri) return ''; 
-    if (uri.startsWith('ipfs://')) {
-      return `https://ipfs.io/ipfs/${uri.replace('ipfs://', '')}`;
+  const formatFullPrecision = (value: string, decimals: number): string => {
+  // Remove all commas/periods if present
+  const cleanValue = value.replace(/[.,]/g, '');
+  
+  // Convert to BigInt to handle very small numbers precisely
+  const bigValue = BigInt(cleanValue);
+  
+  // Calculate the divisor
+  const divisor = BigInt(10 ** decimals);
+  
+  // Get the integer and fractional parts
+  const integerPart = bigValue / divisor;
+  let fractionalPart = bigValue % divisor;
+  
+  // Handle negative values if needed
+  if (bigValue < 0n) fractionalPart *= -1n;
+  
+  // Format with full precision
+  const fractionalStr = fractionalPart.toString()
+    .padStart(decimals, '0')
+    .replace(/0+$/, ''); // Remove trailing zeros if desired
+  
+  return fractionalStr.length > 0 
+    ? `${integerPart},${fractionalStr}`
+    : integerPart.toString();
+};
+
+const formatNumber = (value: string, decimals: number): string => {
+  // Remove all commas and periods first
+  const cleanValue = value.replace(/[.,]/g, '');
+  const numericValue = parseFloat(cleanValue);
+  
+  // Handle invalid numbers
+  if (isNaN(numericValue)) return '0';
+  
+  // Format with comma as decimal separator and period as thousand separator
+  return (numericValue / Math.pow(10, decimals)).toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const setMaxAmount = (tokenAddress: string) => {
+  setTokens(prev => prev.map(token => {
+    if (token.denom === tokenAddress) {
+      const formattedAmount = formatFullPrecision(token.amount, token.decimals);
+      return { ...token, burnAmount: formattedAmount };
     }
-    if (uri.includes('ipfs')) {
-      const ipfsHash = uri.split('ipfs/')[1] || uri.split('ipfs:')[1];
-      return `https://ipfs.io/ipfs/${ipfsHash}`;
+    return token;
+  }));
+};
+
+const formatIpfsUri = (uri: string | null | undefined): string => {
+  if (!uri) return '';
+  
+  if (uri.startsWith('ipfs://')) {
+    return `https://ipfs.io/ipfs/${uri.replace('ipfs://', '')}`;
+  }
+
+  if (uri.includes('.ipfs.')) {
+    try {
+      const url = new URL(uri);
+      
+      const domainParts = url.hostname.split('.');
+      const rootCid = domainParts.find(part => 
+        part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
+      );
+
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      const pathCid = pathParts.find(part => 
+        part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
+      );
+
+      if (rootCid && pathCid) {
+        return `https://ipfs.io/ipfs/${pathCid}`;
+      }
+      
+      if (rootCid) {
+        return `https://ipfs.io/ipfs/${rootCid}${url.pathname}`;
+      }
+    } catch (e) {
+      console.warn('Failed to parse IPFS URI:', uri);
     }
-    return uri;
-  };
+  }
+
+  if (uri.includes('ipfs/')) {
+    const ipfsPath = uri.split('ipfs/')[1];
+    if (ipfsPath) {
+      return `https://ipfs.io/ipfs/${ipfsPath}`;
+    }
+  }
+
+  const ALLOWED_HOSTS = [
+    'i.postimg.cc',
+    'i.imgur.com', 
+    'images.pexels.com',
+    'source.unsplash.com'
+  ];
+
+  try {
+    const url = new URL(uri);
+    if (ALLOWED_HOSTS.includes(url.hostname)) {
+      return uri;
+    }
+  } catch (e) {
+    console.warn('Invalid URI:', uri);
+  }
+
+  return uri;
+};
 
   const openExplorer = () => {
     if (walletAddress) {
@@ -100,7 +199,7 @@ const TokenBurnPage = () => {
       localStorage.setItem("connectedWalletAddress", address);
       setWalletAddress(address);
       
-      const tokenResponse = await fetch(`http://127.0.0.1:8000/token_balances/${address}/`);
+      const tokenResponse = await fetch(`http://127.0.0.1:8000/token_balances/inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49/`);
       const tokenResult: TokenApiResponse = await tokenResponse.json();
       
       const formattedTokens = tokenResult.token_info.map(token => ({
@@ -575,15 +674,31 @@ const TokenBurnPage = () => {
                         </div>
 
                         <div className="mt-4">
-                          <div className="text-white/50 text-sm mb-1">Burn Amount</div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-white/50 text-sm">Burn Amount</span>
+                            <button 
+                              onClick={() => setMaxAmount(token.denom)}
+                              className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
+                            >
+                              MAX
+                            </button>
+                          </div>
                           <input
-                            type="number"
+                            type="text" // Changed from number to text for better formatting control
                             value={token.burnAmount}
-                            onChange={(e) => updateTokenAmount(token.denom, e.target.value)}
+                            onChange={(e) => {
+                              // Allow only numbers, comma, and backspace
+                              const value = e.target.value
+                                .replace(/[^0-9,]/g, '')
+                                .replace(/(,.*?),/g, '$1'); // Allow only one comma
+                              updateTokenAmount(token.denom, value);
+                            }}
+                            onBlur={(e) => {
+                              // Format properly on blur
+                              const formatted = formatNumber(e.target.value, token.decimals);
+                              updateTokenAmount(token.denom, formatted);
+                            }}
                             className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-                            min="0"
-                            max={token.amount}
-                            step={1 / (10 ** token.decimals)}
                           />
                         </div>
                       </motion.div>
@@ -686,17 +801,30 @@ const TokenBurnPage = () => {
                               {formatBalance(token.human_readable_amount, token.decimals)}
                             </td>
                             <td className="px-6 py-4">
-                              <div className="flex justify-end">
-                                <motion.input
-                                  type="number"
-                                  value={token.burnAmount}
-                                  onChange={(e) => updateTokenAmount(token.denom, e.target.value)}
-                                  className="bg-white/5 border border-white/20 rounded-md px-3 py-2 w-32 text-right font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-                                  min="0"
-                                  max={token.amount}
-                                  step={1 / (10 ** token.decimals)}
-                                  whileFocus={{ scale: 1.02 }}
-                                />
+                              <div className="flex justify-end items-center gap-2">
+                                <input
+                                    type="text" // Changed from number to text for better formatting control
+                                    value={token.burnAmount}
+                                    onChange={(e) => {
+                                      // Allow only numbers, comma, and backspace
+                                      const value = e.target.value
+                                        .replace(/[^0-9,]/g, '')
+                                        .replace(/(,.*?),/g, '$1'); // Allow only one comma
+                                      updateTokenAmount(token.denom, value);
+                                    }}
+                                    onBlur={(e) => {
+                                      // Format properly on blur
+                                      const formatted = formatNumber(e.target.value, token.decimals);
+                                      updateTokenAmount(token.denom, formatted);
+                                    }}
+                                    className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                                  />
+                                <button 
+                                  onClick={() => setMaxAmount(token.denom)}
+                                  className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
+                                >
+                                  MAX
+                                </button>
                               </div>
                             </td>
                           </motion.tr>
