@@ -475,9 +475,9 @@ export default function PedroBurnBenefits() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black/50 p-3 md:p-6 rounded-xl border border-white/30 mx-auto backdrop-blur-sm"
+            className="bg-black p-3 md:p-6 rounded-xl border border-white/30 mx-auto backdrop-blur-sm bg-opacity-20"
           >
-            <div className="text-center mb-6 md:mb-10">
+            <div className="text-center mb-3 md:mb-5">
               <h2 className={`${isMobile ? 'text-xl' : 'text-2xl md:text-3xl'} font-bold mb-3`}>The PEDRO Burn Mechanism</h2>
             </div>
 

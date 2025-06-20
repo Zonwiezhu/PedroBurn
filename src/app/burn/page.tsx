@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FiCheck, FiExternalLink } from 'react-icons/fi';
-import { FaFire, FaWallet } from 'react-icons/fa';
+import { FaFire } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Head from 'next/head';
@@ -264,20 +264,16 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
   };
 
   const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
-    // Remove all formatting (commas) and treat as strings
     const cleanAmount = amount.replace(/,/g, '');
     const cleanBurnAmount = burnAmount.replace(/,/g, '');
     
     try {
-      // Convert to BigInt to maintain precision
       const amountBig = BigInt(cleanAmount);
       const burnBig = cleanBurnAmount ? BigInt(cleanBurnAmount) : 0n;
       
-      // Calculate remaining amount
       const actualBurn = burnBig > amountBig ? amountBig : burnBig;
       const remaining = amountBig - actualBurn;
       
-      // Format the numbers with proper decimal places
       return {
         display: `${formatNumber(amount, 6)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
         actualBurn: formatNumber(actualBurn.toString(), decimals)
@@ -557,7 +553,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                   >
                     <div className="flex items-center space-x-1 bg-gray-900/80 hover:bg-gray-800/90 transition-all duration-300 rounded-full pl-3 pr-2 py-1 border border-white/10 hover:border-white/20 shadow-sm">
                       <div className="flex items-center">
-                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mr-2"></div>
+                        <div className="w-4 h-4 rounded-full bg-green-400 animate-pulse mr-2"></div>
                         <span className="text-xs font-mono text-white/90">
                           {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
                         </span>
@@ -582,7 +578,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
               </div>
 
               <motion.div 
-                className="bg-black rounded-xl overflow-hidden border border-white/20 mb-8"
+                className="bg-black bg-opacity-50 rounded-xl overflow-hidden border border-white/20 mb-8"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -592,7 +588,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                     const imageUri = token.uri ? formatIpfsUri(token.uri) : '';                    
                     const shortenedDenom = token.native 
                       ? 'Native' 
-                      : `${token.denom.split('/').pop()?.slice(0, 6)}...${token.denom.slice(-4)}`;
+                      : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
                     const explorerLink = token.native 
                       ? null 
                       : `https://explorer.injective.network/asset/${encodeURIComponent(token.denom)}`;
@@ -690,17 +686,15 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                             </button>
                           </div>
                           <input
-                            type="text" // Changed from number to text for better formatting control
+                            type="text"
                             value={token.burnAmount}
                             onChange={(e) => {
-                              // Allow only numbers, comma, and backspace
                               const value = e.target.value
                                 .replace(/[^0-9,]/g, '')
-                                .replace(/(,.*?),/g, '$1'); // Allow only one comma
+                                .replace(/(,.*?),/g, '$1');
                               updateTokenAmount(token.denom, value);
                             }}
                             onBlur={(e) => {
-                              // Format properly on blur
                               const formatted = formatNumber(e.target.value, token.decimals);
                               updateTokenAmount(token.denom, formatted);
                             }}
@@ -725,10 +719,11 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                     </thead>
                     <tbody>
                       {tokens.map((token) => {
+                        console.log(token.denom)
                         const imageUri = formatIpfsUri(token.uri);
                         const shortenedDenom = token.native 
                           ? 'Native' 
-                          : `${token.denom.split('/').pop()?.slice(0, 6)}...${token.denom.slice(-4)}`;
+                          : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
                         const explorerLink = token.native 
                           ? null 
                           : `https://explorer.injective.network/asset/${encodeURIComponent(token.denom)}`;
@@ -809,17 +804,15 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                             <td className="px-6 py-4">
                               <div className="flex justify-end items-center gap-2">
                                 <input
-                                    type="text" // Changed from number to text for better formatting control
+                                    type="text" 
                                     value={token.burnAmount}
                                     onChange={(e) => {
-                                      // Allow only numbers, comma, and backspace
                                       const value = e.target.value
                                         .replace(/[^0-9,]/g, '')
-                                        .replace(/(,.*?),/g, '$1'); // Allow only one comma
+                                        .replace(/(,.*?),/g, '$1');
                                       updateTokenAmount(token.denom, value);
                                     }}
                                     onBlur={(e) => {
-                                      // Format properly on blur
                                       const formatted = formatNumber(e.target.value, token.decimals);
                                       updateTokenAmount(token.denom, formatted);
                                     }}
@@ -897,8 +890,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                   whileHover={selectedTokens.length > 0 ? { scale: 1.05 } : {}}
                   whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
                 >
-                  <FaFire className="" />
-                  Burn Tokens
+                  BURN TOKENS
                   {selectedTokens.length > 0 && (
                     <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
                       {selectedTokens.length}
