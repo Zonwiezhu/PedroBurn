@@ -552,26 +552,26 @@ const TokenBurnPage = () => {
               </motion.div>
             </motion.div>
           ) : (
-            <section className="relative py-8 px-4 sm:px-6 mx-auto max-w-[1500px]">
+            <section className="relative py-8 px-4 sm:px-6 mx-auto max-w-[1750px]">
               <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={openExplorer}
-                    className="relative group focus:outline-none"
-                  >
-                    <div className="flex items-center space-x-1 bg-gray-900/80 hover:bg-gray-800/90 transition-all duration-300 rounded-full pl-3 pr-2 py-1 border border-white/10 hover:border-white/20 shadow-sm">
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 rounded-full bg-green-400 animate-pulse mr-2"></div>
-                        <span className="text-xs font-mono text-white/90">
-                          {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-                        </span>
-                      </div>
-                      <FiExternalLink className="w-3 h-3 text-white/50 group-hover:text-white/80 transition-colors" />
+                <button 
+                  onClick={openExplorer}
+                  className="relative group focus:outline-none"
+                >
+                  <div className="flex items-center space-x-2 bg-gray-900/80 hover:bg-gray-800/90 transition-all duration-300 rounded-full pl-4 pr-3 py-2.5 border border-white/10 hover:border-white/20 shadow-sm">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 rounded-full bg-green-400 animate-pulse mr-2"></div>
+                      <span className="text-sm font-mono text-white/90">
+                        {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+                      </span>
                     </div>
-                    <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                      View on Explorer
-                    </div>
-                  </button>
+                    <FiExternalLink className="w-4 h-4 text-white/50 group-hover:text-white/80 transition-colors" />
+                  </div>
+                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                    View on Explorer
+                  </div>
+                </button>
                 </div>
                 <div className="flex gap-2">
                   <motion.button 
