@@ -68,7 +68,7 @@ const TokenBurnPage = () => {
 
   const formatTokenName = (name: string) => {
     if (!name) return 'Unknown Token';
-    return name.length > 40 ? `${name.substring(0, 30)}...` : name;
+    return name.length > 20 ? `${name.substring(0, 14)}...` : name;
   };
 
   const formatDenom = (denom: string) => {
@@ -694,7 +694,7 @@ const TokenBurnPage = () => {
                               onClick={() => setMaxAmount(token.denom)}
                               className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
                             >
-                              MAX
+                              ALL
                             </button>
                           </div>
                           <input
@@ -931,7 +931,6 @@ const TokenBurnPage = () => {
           )}
         </div>
 
-        {/* Modal */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: isModalOpen ? 1 : 0 }}
