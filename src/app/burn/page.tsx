@@ -22,6 +22,7 @@ interface Token {
   uri?: string | null;
   description?: string;
   native?: boolean;
+  is_verified?: boolean;
 }
 
 interface TokenApiResponse {
@@ -33,8 +34,9 @@ interface TokenApiResponse {
     amount: string;
     decimals: number;
     human_readable_amount: string;
-    description: string;
+    description?: string;
     uri?: string;
+    is_verified?: boolean;
   }[];
 }
 
@@ -50,114 +52,106 @@ const TokenBurnPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const formatFullPrecision = (value: string, decimals: number): string => {
-  const cleanValue = value.replace(/[.,]/g, '');
-  
-  const bigValue = BigInt(cleanValue);
-  
-  const divisor = BigInt(10 ** decimals);
-  
-  const integerPart = bigValue / divisor;
-  let fractionalPart = bigValue % divisor;
-  
-  if (bigValue < 0n) fractionalPart *= -1n;
-  
-  const fractionalStr = fractionalPart.toString()
-    .padStart(decimals, '0')
-    .replace(/0+$/, '');
-  
-  return fractionalStr.length > 0 
-    ? `${integerPart},${fractionalStr}`
-    : integerPart.toString();
-};
+    const cleanValue = value.replace(/[.,]/g, '');
+    const bigValue = BigInt(cleanValue);
+    const divisor = BigInt(10 ** decimals);
+    const integerPart = bigValue / divisor;
+    let fractionalPart = bigValue % divisor;
+    if (bigValue < 0n) fractionalPart *= -1n;
+    const fractionalStr = fractionalPart.toString()
+      .padStart(decimals, '0')
+      .replace(/0+$/, '');
+    return fractionalStr.length > 0 
+      ? `${integerPart},${fractionalStr}`
+      : integerPart.toString();
+  };
 
-const formatTokenName = (name: string) => {
-  return name.length > 40 ? `${name.substring(0, 40)}...` : name;
-};
+  const formatTokenName = (name: string) => {
+    if (!name) return 'Unknown Token';
+    return name.length > 40 ? `${name.substring(0, 40)}...` : name;
+  };
 
-const formatDenom = (denom: string) => {
-  if (denom.length <= 8) return denom;
-  return `${denom.substring(0, 4)}...${denom.slice(-4)}`;
-};
+  const formatDenom = (denom: string) => {
+    if (denom.length <= 8) return denom;
+    return `${denom.substring(0, 4)}...${denom.slice(-4)}`;
+  };
 
-const formatNumber = (value: string, decimals: number): string => {
-  const cleanValue = value.replace(/[.,]/g, '');
-  
-  const paddedValue = cleanValue.padStart(decimals + 1, '0');
-  
-  const integerPart = paddedValue.slice(0, -decimals) || '0';
-  const fractionalPart = paddedValue.slice(-decimals);
-  
-  return `${integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${fractionalPart}`;
-};
+  const formatNumber = (value: string, decimals: number): string => {
+    if (!value) return '0';
+    const cleanValue = value.replace(/[.,]/g, '');
+    const paddedValue = cleanValue.padStart(decimals + 1, '0');
+    const integerPart = paddedValue.slice(0, -decimals) || '0';
+    const fractionalPart = paddedValue.slice(-decimals);
+    return `${integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${fractionalPart}`;
+  };
 
-const setMaxAmount = (tokenAddress: string) => {
-  setTokens(prev => prev.map(token => {
-    if (token.denom === tokenAddress) {
-      const formattedAmount = formatFullPrecision(token.amount, token.decimals);
-      return { ...token, burnAmount: formattedAmount };
+  const setMaxAmount = (tokenAddress: string) => {
+    setTokens(prev => prev.map(token => {
+      if (token.denom === tokenAddress) {
+        const formattedAmount = formatFullPrecision(token.amount, token.decimals);
+        return { ...token, burnAmount: formattedAmount };
+      }
+      return token;
+    }));
+  };
+
+  const formatIpfsUri = (uri: string | null | undefined): string => {
+    if (!uri) return '';
+    
+    if (uri.startsWith('ipfs://')) {
+      return `https://ipfs.io/ipfs/${uri.replace('ipfs://', '')}`;
     }
-    return token;
-  }));
-};
 
-const formatIpfsUri = (uri: string | null | undefined): string => {
-  if (!uri) return '';
-  
-  if (uri.startsWith('ipfs://')) {
-    return `https://ipfs.io/ipfs/${uri.replace('ipfs://', '')}`;
-  }
+    if (uri.includes('.ipfs.')) {
+      try {
+        const url = new URL(uri);
+        const domainParts = url.hostname.split('.');
+        const rootCid = domainParts.find(part => 
+          part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
+        );
 
-  if (uri.includes('.ipfs.')) {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const pathCid = pathParts.find(part => 
+          part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
+        );
+
+        if (rootCid && pathCid) {
+          return `https://ipfs.io/ipfs/${pathCid}`;
+        }
+        
+        if (rootCid) {
+          return `https://ipfs.io/ipfs/${rootCid}${url.pathname}`;
+        }
+      } catch (e) {
+        console.warn('Failed to parse IPFS URI:', uri);
+      }
+    }
+
+    if (uri.includes('ipfs/')) {
+      const ipfsPath = uri.split('ipfs/')[1];
+      if (ipfsPath) {
+        return `https://ipfs.io/ipfs/${ipfsPath}`;
+      }
+    }
+
+    const ALLOWED_HOSTS = [
+      'i.postimg.cc',
+      'i.imgur.com', 
+      'images.pexels.com',
+      'source.unsplash.com'
+    ];
+
     try {
       const url = new URL(uri);
-      
-      const domainParts = url.hostname.split('.');
-      const rootCid = domainParts.find(part => 
-        part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
-      );
-
-      const pathParts = url.pathname.split('/').filter(Boolean);
-      const pathCid = pathParts.find(part => 
-        part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
-      );
-
-      if (rootCid && pathCid) {
-        return `https://ipfs.io/ipfs/${pathCid}`;
-      }
-      
-      if (rootCid) {
-        return `https://ipfs.io/ipfs/${rootCid}${url.pathname}`;
+      if (ALLOWED_HOSTS.includes(url.hostname)) {
+        return uri;
       }
     } catch (e) {
-      console.warn('Failed to parse IPFS URI:', uri);
+      console.warn('Invalid URI:', uri);
     }
-  }
 
-  if (uri.includes('ipfs/')) {
-    const ipfsPath = uri.split('ipfs/')[1];
-    if (ipfsPath) {
-      return `https://ipfs.io/ipfs/${ipfsPath}`;
-    }
-  }
-
-  const ALLOWED_HOSTS = [
-    'i.postimg.cc',
-    'i.imgur.com', 
-    'images.pexels.com',
-    'source.unsplash.com'
-  ];
-
-  try {
-    const url = new URL(uri);
-    if (ALLOWED_HOSTS.includes(url.hostname)) {
-      return uri;
-    }
-  } catch (e) {
-    console.warn('Invalid URI:', uri);
-  }
-
-  return uri;
-};
+    return uri;
+  };
 
   const openExplorer = () => {
     if (walletAddress) {
@@ -202,17 +196,17 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
       const tokenResult: TokenApiResponse = await tokenResponse.json();
       
       const formattedTokens = tokenResult.token_info.map(token => ({
-        name: token.name,
-        symbol: token.symbol,
+        name: token.name || 'Unknown Token',
+        symbol: token.symbol || 'N/A',
         denom: token.denom,
-        address: token.denom,
-        amount: token.human_readable_amount,
+        amount: token.amount,
         burnAmount: "",
         decimals: token.decimals,
         human_readable_amount: token.human_readable_amount,
         uri: token.uri,
         description: token.description,
-        native: token.denom === 'inj'
+        native: token.denom === 'inj',
+        is_verified: token.is_verified
       }));
             
       setTokens(formattedTokens);
@@ -264,6 +258,8 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
   };
 
   const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
+    if (!amount) return { display: "0", actualBurn: "0" };
+    
     const cleanAmount = amount.replace(/,/g, '');
     const cleanBurnAmount = burnAmount.replace(/,/g, '');
     
@@ -275,7 +271,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
       const remaining = amountBig - actualBurn;
       
       return {
-        display: `${formatNumber(amount, 6)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
+        display: `${formatNumber(amount, decimals)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
         actualBurn: formatNumber(actualBurn.toString(), decimals)
       };
     } catch (e) {
@@ -288,6 +284,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
   };
 
   const formatBalance = (amount: string, decimals: number) => {
+    if (!amount) return '0';
     return parseFloat(amount.replace(/,/g, '')).toLocaleString(undefined, {
       maximumFractionDigits: decimals
     });
@@ -340,7 +337,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
             </motion.div>
           </section>
 
-           {!isConnected ? (
+          {!isConnected ? (
             <motion.div 
               className="flex flex-col max-w-[1500px] p-5 mx-auto items-center justify-center text-center py-32 px-4 sm:px-8 pb-16 bg-black bg-opacity-20 rounded-xl border-2 border-white/20 relative overflow-hidden"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -638,11 +635,16 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                                 )}
                               </div>
                               <div>
-                                <div className="font-medium">{formatTokenName(token.name || token.symbol || 'Unknown Token')}</div>
-                                <div className="text-white/50 text-sm">{token.symbol || 'N/A'}</div>
+                                <div className="font-medium">{formatTokenName(token.name)}</div>
+                                <div className="text-white/50 text-sm">{token.symbol}</div>
                               </div>
                             </div>
                           </div>
+                          {token.is_verified && (
+                            <span className="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded">
+                              Verified
+                            </span>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -719,7 +721,6 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                     </thead>
                     <tbody>
                       {tokens.map((token) => {
-                        console.log(token.denom)
                         const imageUri = formatIpfsUri(token.uri);
                         const shortenedDenom = token.native 
                           ? 'Native' 
@@ -774,9 +775,14 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="font-medium">{formatTokenName(token.name || token.symbol || 'Unknown Token')}</div>
-                                  <div className="text-white/50 text-sm">{token.symbol || 'N/A'}</div>
+                                  <div className="font-medium">{formatTokenName(token.name)}</div>
+                                  <div className="text-white/50 text-sm">{token.symbol}</div>
                                 </div>
+                                {token.is_verified && (
+                                  <span className="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded">
+                                    Verified
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="px-6 py-4">
@@ -862,6 +868,11 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                                 {token.symbol.charAt(0)}
                               </div>
                               <span className="truncate max-w-[100px] sm:max-w-none">{token.symbol}</span>
+                              {token.is_verified && (
+                                <span className="text-xs bg-green-900/50 text-green-400 px-1 rounded">
+                                  ✓
+                                </span>
+                              )}
                             </div>
                             <div className="flex flex-col items-end">
                               <span className="font-mono text-sm sm:text-base">
@@ -890,6 +901,7 @@ const formatIpfsUri = (uri: string | null | undefined): string => {
                   whileHover={selectedTokens.length > 0 ? { scale: 1.05 } : {}}
                   whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
                 >
+                  <FaFire className="text-orange-500" />
                   BURN TOKENS
                   {selectedTokens.length > 0 && (
                     <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
