@@ -51,21 +51,6 @@ const TokenBurnPage = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const formatFullPrecision = (value: string, decimals: number): string => {
-    const cleanValue = value.replace(/[.,]/g, '');
-    const bigValue = BigInt(cleanValue);
-    const divisor = BigInt(10 ** decimals);
-    const integerPart = bigValue / divisor;
-    let fractionalPart = bigValue % divisor;
-    if (bigValue < 0n) fractionalPart *= -1n;
-    const fractionalStr = fractionalPart.toString()
-      .padStart(decimals, '0')
-      .replace(/0+$/, '');
-    return fractionalStr.length > 0 
-      ? `${integerPart},${fractionalStr}`
-      : integerPart.toString();
-  };
-
   const formatTokenName = (name: string) => {
     if (!name) return 'Unknown Token';
     return name.length > 20 ? `${name.substring(0, 14)}...` : name;
@@ -77,18 +62,29 @@ const TokenBurnPage = () => {
   };
 
   const formatNumber = (value: string, decimals: number): string => {
-    if (!value) return '0';
-    const cleanValue = value.replace(/[.,]/g, '');
+    if (!value || value === '0') return `0,${'0'.repeat(decimals)}`;
+    
+    // Remove all formatting characters
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    
+    // Pad with leading zeros to ensure we have enough digits
     const paddedValue = cleanValue.padStart(decimals + 1, '0');
+    
+    // Split into integer and fractional parts
     const integerPart = paddedValue.slice(0, -decimals) || '0';
     const fractionalPart = paddedValue.slice(-decimals);
-    return `${integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${fractionalPart}`;
+    
+    // Add thousands separators to integer part
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    
+    return `${formattedInteger},${fractionalPart}`;
   };
 
   const setMaxAmount = (tokenAddress: string) => {
     setTokens(prev => prev.map(token => {
       if (token.denom === tokenAddress) {
-        const formattedAmount = formatFullPrecision(token.amount, token.decimals);
+        // Format the raw amount with all decimals
+        const formattedAmount = formatNumber(token.amount, token.decimals);
         return { ...token, burnAmount: formattedAmount };
       }
       return token;
@@ -212,7 +208,7 @@ const TokenBurnPage = () => {
         amount: token.amount,
         burnAmount: "",
         decimals: token.decimals,
-        human_readable_amount: token.human_readable_amount,
+        human_readable_amount: formatNumber(token.amount, token.decimals),
         logo: token.logo,
         description: token.description,
         native: token.denom === 'inj',
@@ -268,36 +264,43 @@ const TokenBurnPage = () => {
   };
 
   const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
-    if (!amount) return { display: "0", actualBurn: "0" };
-    
-    const cleanAmount = amount.replace(/,/g, '');
-    const cleanBurnAmount = burnAmount.replace(/,/g, '');
+    if (!amount) return { display: `0,${'0'.repeat(decimals)}`, actualBurn: `0,${'0'.repeat(decimals)}` };
     
     try {
-      const amountBig = BigInt(cleanAmount);
-      const burnBig = cleanBurnAmount ? BigInt(cleanBurnAmount) : 0n;
+      // Remove formatting and parse as numbers
+      const cleanAmount = amount.replace(/\./g, '').replace(',', '.');
+      const cleanBurnAmount = burnAmount.replace(/\./g, '').replace(',', '.');
       
-      const actualBurn = burnBig > amountBig ? amountBig : burnBig;
-      const remaining = amountBig - actualBurn;
+      const amountNum = parseFloat(cleanAmount);
+      const burnNum = parseFloat(cleanBurnAmount || '0');
+      
+      // Calculate actual burn (can't burn more than available)
+      const actualBurn = Math.min(burnNum, amountNum);
+      const remaining = amountNum - actualBurn;
       
       return {
         display: `${formatNumber(amount, decimals)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
         actualBurn: formatNumber(actualBurn.toString(), decimals)
       };
     } catch (e) {
-      console.error("Error in big number calculation:", e);
+      console.error("Error in number calculation:", e);
       return {
         display: "Error in calculation",
-        actualBurn: "0"
+        actualBurn: `0,${'0'.repeat(decimals)}`
       };
     }
   };
 
   const formatBalance = (amount: string, decimals: number) => {
-    if (!amount) return '0';
-    return parseFloat(amount.replace(/,/g, '')).toLocaleString(undefined, {
-      maximumFractionDigits: decimals
-    });
+    if (!amount) return `0,${'0'.repeat(decimals)}`;
+    
+    // If it's already in the correct format, return it
+    if (/^\d{1,3}(?:\.\d{3})*,\d+$/.test(amount)) {
+      return amount;
+    }
+    
+    // Otherwise format it properly
+    return formatNumber(amount, decimals);
   };
 
   return (
@@ -336,7 +339,7 @@ const TokenBurnPage = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.8 }}
               >
-                BURN TOKEN
+                TOKEN BURN
               </motion.h1>
               <motion.div
                 initial={{ opacity: 0, scaleX: 0 }}
@@ -702,8 +705,8 @@ const TokenBurnPage = () => {
                             value={token.burnAmount}
                             onChange={(e) => {
                               const value = e.target.value
-                                .replace(/[^0-9,]/g, '')
-                                .replace(/(,.*?),/g, '$1');
+                                .replace(/[^0-9,.]/g, '')
+                                .replace(/([,.])(?=.*[,.])/g, '');
                               updateTokenAmount(token.denom, value);
                             }}
                             onBlur={(e) => {
@@ -831,8 +834,8 @@ const TokenBurnPage = () => {
                                   value={token.burnAmount}
                                   onChange={(e) => {
                                     const value = e.target.value
-                                      .replace(/[^0-9,]/g, '')
-                                      .replace(/(,.*?),/g, '$1');
+                                      .replace(/[^0-9,.]/g, '')
+                                      .replace(/([,.])(?=.*[,.])/g, '');
                                     updateTokenAmount(token.denom, value);
                                   }}
                                   onBlur={(e) => {
@@ -871,7 +874,7 @@ const TokenBurnPage = () => {
                     {tokens
                       .filter(token => selectedTokens.includes(token.denom))
                       .map(token => {
-                        const summary = getBurnSummary(token.amount, token.burnAmount, 6);
+                        const summary = getBurnSummary(token.amount, token.burnAmount, token.decimals);
                         return (
                           <motion.li 
                             key={token.denom} 
