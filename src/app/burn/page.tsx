@@ -19,7 +19,7 @@ interface Token {
   burnAmount: string;
   decimals: number;
   human_readable_amount: string;
-  uri?: string | null;
+  logo?: string | null;
   description?: string;
   native?: boolean;
   is_verified?: boolean;
@@ -35,7 +35,7 @@ interface TokenApiResponse {
     decimals: number;
     human_readable_amount: string;
     description?: string;
-    uri?: string;
+    logo?: string;
     is_verified?: boolean;
   }[];
 }
@@ -95,16 +95,17 @@ const TokenBurnPage = () => {
     }));
   };
 
-  const formatIpfsUri = (uri: string | null | undefined): string => {
-    if (!uri) return '';
+  const formatIpfslogo = (logo: string | null | undefined): string => {
+    if (!logo) return '';
     
-    if (uri.startsWith('ipfs://')) {
-      return `https://ipfs.io/ipfs/${uri.replace('ipfs://', '')}`;
+    // Handle IPFS logos first
+    if (logo.startsWith('ipfs://')) {
+      return `https://ipfs.io/ipfs/${logo.replace('ipfs://', '')}`;
     }
 
-    if (uri.includes('.ipfs.')) {
+    if (logo.includes('.ipfs.')) {
       try {
-        const url = new URL(uri);
+        const url = new URL(logo);
         const domainParts = url.hostname.split('.');
         const rootCid = domainParts.find(part => 
           part.match(/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|B[A-Z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48}|F[0-9A-F]{50})$/i)
@@ -123,14 +124,23 @@ const TokenBurnPage = () => {
           return `https://ipfs.io/ipfs/${rootCid}${url.pathname}`;
         }
       } catch (e) {
-        console.warn('Failed to parse IPFS URI:', uri);
+        console.warn('Failed to parse IPFS logo:', logo);
       }
     }
 
-    if (uri.includes('ipfs/')) {
-      const ipfsPath = uri.split('ipfs/')[1];
+    if (logo.includes('ipfs/')) {
+      const ipfsPath = logo.split('ipfs/')[1];
       if (ipfsPath) {
         return `https://ipfs.io/ipfs/${ipfsPath}`;
+      }
+    }
+
+    if (logo.includes('imagedelivery.net')) {
+      try {
+        const url = new URL(logo);
+        return logo;
+      } catch (e) {
+        console.warn('Invalid imagedelivery.net logo:', logo);
       }
     }
 
@@ -138,19 +148,20 @@ const TokenBurnPage = () => {
       'i.postimg.cc',
       'i.imgur.com', 
       'images.pexels.com',
-      'source.unsplash.com'
+      'source.unsplash.com',
+      'imagedelivery.net' // Added to allowed hosts
     ];
 
     try {
-      const url = new URL(uri);
+      const url = new URL(logo);
       if (ALLOWED_HOSTS.includes(url.hostname)) {
-        return uri;
+        return logo;
       }
     } catch (e) {
-      console.warn('Invalid URI:', uri);
+      console.warn('Invalid logo:', logo);
     }
 
-    return uri;
+    return logo;
   };
 
   const openExplorer = () => {
@@ -203,7 +214,7 @@ const TokenBurnPage = () => {
         burnAmount: "",
         decimals: token.decimals,
         human_readable_amount: token.human_readable_amount,
-        uri: token.uri,
+        logo: token.logo,
         description: token.description,
         native: token.denom === 'inj',
         is_verified: token.is_verified
@@ -582,7 +593,7 @@ const TokenBurnPage = () => {
               >
                 <div className="md:hidden">
                   {tokens.map((token) => {
-                    const imageUri = token.uri ? formatIpfsUri(token.uri) : '';                    
+                    const imagelogo = token.logo ? formatIpfslogo(token.logo) : '';                    
                     const shortenedDenom = token.native 
                       ? 'Native' 
                       : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
@@ -611,9 +622,9 @@ const TokenBurnPage = () => {
                             </button>
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
-                                {imageUri ? (
+                                {imagelogo ? (
                                   <img 
-                                    src={imageUri} 
+                                    src={imagelogo} 
                                     alt={token.symbol}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
@@ -721,7 +732,7 @@ const TokenBurnPage = () => {
                     </thead>
                     <tbody>
                       {tokens.map((token) => {
-                        const imageUri = formatIpfsUri(token.uri);
+                        const imagelogo = formatIpfslogo(token.logo);
                         const shortenedDenom = token.native 
                           ? 'Native' 
                           : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
@@ -751,9 +762,9 @@ const TokenBurnPage = () => {
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
-                                  {imageUri ? (
+                                  {imagelogo ? (
                                     <img 
-                                      src={imageUri} 
+                                      src={imagelogo} 
                                       alt={token.symbol}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
