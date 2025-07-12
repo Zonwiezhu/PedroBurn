@@ -68,7 +68,7 @@ const TokenBurnPage = () => {
 
   const formatTokenName = (name: string) => {
     if (!name) return 'Unknown Token';
-    return name.length > 40 ? `${name.substring(0, 40)}...` : name;
+    return name.length > 40 ? `${name.substring(0, 30)}...` : name;
   };
 
   const formatDenom = (denom: string) => {
@@ -98,7 +98,6 @@ const TokenBurnPage = () => {
   const formatIpfslogo = (logo: string | null | undefined): string => {
     if (!logo) return '';
     
-    // Handle IPFS logos first
     if (logo.startsWith('ipfs://')) {
       return `https://ipfs.io/ipfs/${logo.replace('ipfs://', '')}`;
     }
@@ -149,7 +148,7 @@ const TokenBurnPage = () => {
       'i.imgur.com', 
       'images.pexels.com',
       'source.unsplash.com',
-      'imagedelivery.net' // Added to allowed hosts
+      'imagedelivery.net'
     ];
 
     try {
@@ -591,7 +590,7 @@ const TokenBurnPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="md:hidden">
+                <div className="xl:hidden">
                   {tokens.map((token) => {
                     const imagelogo = token.logo ? formatIpfslogo(token.logo) : '';                    
                     const shortenedDenom = token.native 
@@ -719,136 +718,143 @@ const TokenBurnPage = () => {
                   })}
                 </div>
 
-                <div className="hidden md:block">
-                  <table className="w-full">
-                    <thead className="bg-white/5 border-b border-white/20">
-                      <tr>
-                        <th className="px-6 py-4 text-left w-12"></th>
-                        <th className="px-6 py-4 text-left">Token</th>
-                        <th className="px-6 py-4 text-left">Address</th>
-                        <th className="px-6 py-4 text-right">Balance</th>
-                        <th className="px-6 py-4 text-right">Burn Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tokens.map((token) => {
-                        const imagelogo = formatIpfslogo(token.logo);
-                        const shortenedDenom = token.native 
-                          ? 'Native' 
-                          : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
-                        const explorerLink = token.native 
-                          ? null 
-                          : `https://explorer.injective.network/asset/${encodeURIComponent(token.denom)}`;
+               <div className="hidden xl:block">
+                <table className="w-full">
+                  <thead className="bg-white/5 border-b border-white/20">
+                    <tr>
+                      <th className="px-6 py-4 text-left w-12"></th>
+                      <th className="px-6 py-4 text-left">Token</th>
+                      <th className="px-6 py-4 text-left">Address</th>
+                      <th className="px-6 py-4 text-center">Verified</th>
+                      <th className="px-6 py-4 text-right">Balance</th>
+                      <th className="px-6 py-4 text-right">Burn Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tokens.map((token) => {
+                      const imagelogo = formatIpfslogo(token.logo);
+                      const shortenedDenom = token.native 
+                        ? 'Native' 
+                        : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
+                      const explorerLink = token.native 
+                        ? null 
+                        : `https://explorer.injective.network/asset/${encodeURIComponent(token.denom)}`;
 
-                        return (
-                          <motion.tr 
-                            key={token.denom} 
-                          >
-                            <td className="px-6 py-4">
-                              <motion.button
-                                onClick={() => toggleTokenSelection(token.denom)}
-                                className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
-                                  selectedTokens.includes(token.denom) 
-                                    ? 'bg-white shadow-lg' 
-                                    : 'border border-white/30 hover:border-white'
-                                }`}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                {selectedTokens.includes(token.denom) && (
-                                  <FiCheck className="text-black" />
-                                )}
-                              </motion.button>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
-                                  {imagelogo ? (
-                                    <img 
-                                      src={imagelogo} 
-                                      alt={token.symbol}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        const imgElement = e.target as HTMLImageElement;
-                                        imgElement.src = '';
-                                        const parent = imgElement.parentElement;
-                                        if (parent) {
-                                          const fallback = document.createElement('span');
-                                          fallback.className = 'flex items-center justify-center w-full h-full';
-                                          fallback.textContent = token.symbol.charAt(0);
-                                          parent.replaceChild(fallback, imgElement);
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    <span className="flex items-center justify-center w-full h-full">
-                                      {token.symbol.charAt(0)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="font-medium">{formatTokenName(token.name)}</div>
-                                  <div className="text-white/50 text-sm">{token.symbol}</div>
-                                </div>
-                                {token.is_verified && (
-                                  <span className="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded">
-                                    Verified
+                      return (
+                        <motion.tr 
+                          key={token.denom} 
+                        >
+                          <td className="px-6 py-4">
+                            <motion.button
+                              onClick={() => toggleTokenSelection(token.denom)}
+                              className={`w-6 h-6 rounded flex items-center justify-center transition-all duration-300 ${
+                                selectedTokens.includes(token.denom) 
+                                  ? 'bg-white shadow-lg' 
+                                  : 'border border-white/30 hover:border-white'
+                              }`}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              {selectedTokens.includes(token.denom) && (
+                                <FiCheck className="text-black" />
+                              )}
+                            </motion.button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                                {imagelogo ? (
+                                  <img 
+                                    src={imagelogo} 
+                                    alt={token.symbol}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const imgElement = e.target as HTMLImageElement;
+                                      imgElement.src = '';
+                                      const parent = imgElement.parentElement;
+                                      if (parent) {
+                                        const fallback = document.createElement('span');
+                                        fallback.className = 'flex items-center justify-center w-full h-full';
+                                        fallback.textContent = token.symbol.charAt(0);
+                                        parent.replaceChild(fallback, imgElement);
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="flex items-center justify-center w-full h-full">
+                                    {token.symbol.charAt(0)}
                                   </span>
                                 )}
                               </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                {explorerLink ? (
-                                  <a 
-                                    href={explorerLink} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-white/70 hover:text-white hover:underline"
-                                  >
-                                    {shortenedDenom}
-                                  </a>
-                                ) : (
-                                  <span className="text-white/50">{shortenedDenom}</span>
-                                )}
-                                {explorerLink && (
-                                  <FiExternalLink size={14} className="text-white/50" />
-                                )}
+                              <div>
+                                <div className="font-medium">{formatTokenName(token.name)}</div>
+                                <div className="text-white/50 text-sm">{token.symbol}</div>
                               </div>
-                            </td>
-                            <td className="px-6 py-4 text-right font-mono">
-                              {formatBalance(token.human_readable_amount, token.decimals)}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex justify-end items-center gap-2">
-                                <input
-                                    type="text" 
-                                    value={token.burnAmount}
-                                    onChange={(e) => {
-                                      const value = e.target.value
-                                        .replace(/[^0-9,]/g, '')
-                                        .replace(/(,.*?),/g, '$1');
-                                      updateTokenAmount(token.denom, value);
-                                    }}
-                                    onBlur={(e) => {
-                                      const formatted = formatNumber(e.target.value, token.decimals);
-                                      updateTokenAmount(token.denom, formatted);
-                                    }}
-                                    className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-                                  />
-                                <button 
-                                  onClick={() => setMaxAmount(token.denom)}
-                                  className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {explorerLink ? (
+                                <a 
+                                  href={explorerLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-white/70 hover:text-white hover:underline"
                                 >
-                                  MAX
-                                </button>
-                              </div>
-                            </td>
-                          </motion.tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                                  {shortenedDenom}
+                                </a>
+                              ) : (
+                                <span className="text-white/50">{shortenedDenom}</span>
+                              )}
+                              {explorerLink && (
+                                <FiExternalLink size={14} className="text-white/50" />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {token.is_verified ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-900/20 text-green-400">
+                                <FiCheck className="w-4 h-4" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/20 text-red-400">
+                                <span className="w-4 h-4">—</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right font-mono">
+                            {formatBalance(token.human_readable_amount, token.decimals)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex justify-end items-center gap-2">
+                              <input
+                                  type="text" 
+                                  value={token.burnAmount}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                      .replace(/[^0-9,]/g, '')
+                                      .replace(/(,.*?),/g, '$1');
+                                    updateTokenAmount(token.denom, value);
+                                  }}
+                                  onBlur={(e) => {
+                                    const formatted = formatNumber(e.target.value, token.decimals);
+                                    updateTokenAmount(token.denom, formatted);
+                                  }}
+                                  className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                                />
+                              <button 
+                                onClick={() => setMaxAmount(token.denom)}
+                                className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
+                              >
+                                ALL
+                              </button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
               </motion.div>
 
               {selectedTokens.length > 0 && (
