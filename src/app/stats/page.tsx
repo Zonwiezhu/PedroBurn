@@ -2,7 +2,7 @@
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import Head from "next/head";
 import { useState, useEffect } from 'react';
-import { FaFire, FaCoins, FaUsers, FaPercentage, FaSyncAlt } from "react-icons/fa";
+import { FaFire, FaCoins, FaPercentage, FaSyncAlt } from "react-icons/fa";
 import Image from "next/image";
 
 type CornerCircleProps = {
@@ -11,22 +11,23 @@ type CornerCircleProps = {
   reverse?: boolean;
 };
 
+type BurnData = {
+  total_burn: number;
+  total_supply: number;
+  circulation_supply: number;
+  time: string;
+};
+
 export default function PedroBurnStats() {
   const [displayedNumber, setDisplayedNumber] = useState<number>(0);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
-  const targetNumber = 2773123212;
+  const [burnData, setBurnData] = useState<BurnData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const controls = useAnimation();
 
-  // Stats data
-  const holders = 3568;
-  const totalSupply = 10000000000;
-  const burnedAmount = targetNumber;
-  const circulatingSupply = totalSupply - burnedAmount;
-  const top10HoldersPercent = 36;
-
   useEffect(() => {
-    // Check if mobile on mount and on resize
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -38,32 +39,79 @@ export default function PedroBurnStats() {
   }, []);
 
   useEffect(() => {
-    setLastUpdated(new Date().toLocaleString());
-    
-    const duration = 5; // 5 seconds count-up
-    const startTime = Date.now();
-    const endTime = startTime + duration * 1000;
-    
-    const updateNumber = () => {
-      const now = Date.now();
-      const progress = Math.min(1, (now - startTime) / (endTime - startTime));
-      // Ease-out function for smoother ending
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-      const currentNumber = Math.floor(easedProgress * targetNumber);
-      setDisplayedNumber(currentNumber);
-      
-      if (now < endTime) {
-        requestAnimationFrame(updateNumber);
-      } else {
-        setDisplayedNumber(targetNumber);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/pedro_burn/');
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const data = await response.json();
+        const burnData = data[0];
+        
+        setBurnData({
+          total_burn: Math.round(burnData.total_burn),
+          total_supply: Math.round(burnData.total_supply),
+          circulation_supply: Math.round(burnData.circulation_supply),
+          time: burnData.time
+        });
+        
+        setLastUpdated(burnData.time);
+        setIsLoading(false);
+        
+        const duration = 3;
+        const startTime = Date.now();
+        const endTime = startTime + duration * 1000;
+        
+        const updateNumber = () => {
+          const now = Date.now();
+          const progress = Math.min(1, (now - startTime) / (endTime - startTime));
+          const easedProgress = 1 - Math.pow(1 - progress, 3);
+          const currentNumber = Math.floor(easedProgress * burnData.total_burn);
+          setDisplayedNumber(currentNumber);
+          
+          if (now < endTime) {
+            requestAnimationFrame(updateNumber);
+          } else {
+            setDisplayedNumber(Math.round(burnData.total_burn));
+          }
+        };
+        
+        updateNumber();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error occurred');
+        setIsLoading(false);
       }
     };
     
-    updateNumber();
+    fetchData();
   }, []);
 
-  const handleRefresh = () => {
-    setLastUpdated(new Date().toLocaleString());
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/pedro_burn/');
+      if (!response.ok) {
+        throw new Error('Failed to fetch data');
+      }
+      const data = await response.json();
+      const burnData = data[0];
+      
+      setBurnData({
+        total_burn: Math.round(burnData.total_burn),
+        total_supply: Math.round(burnData.total_supply),
+        circulation_supply: Math.round(burnData.circulation_supply),
+        time: burnData.time
+      });
+      
+      setLastUpdated(burnData.time);
+      setDisplayedNumber(Math.round(burnData.total_burn));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+    
     controls.start({
       rotate: 360,
       transition: { duration: 0.8 }
@@ -99,7 +147,6 @@ export default function PedroBurnStats() {
             </div>
           </div>
         ))}
-        {/* Inner ring */}
         <div className="absolute inset-4 rounded-full border border-white/5"></div>
       </motion.div>
     );
@@ -121,19 +168,15 @@ export default function PedroBurnStats() {
           backgroundAttachment: "fixed"
         }}
       >
-        {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/80 z-0"></div>
 
-        {/* Corner Circles - Only show on desktop */}
         <CornerCircle position="top-left" speed={60} />
         <CornerCircle position="top-right" speed={80} reverse />
         <CornerCircle position="bottom-left" speed={100} />
         <CornerCircle position="bottom-right" speed={70} reverse />
 
-        {/* Side decorations - Only show on desktop */}
         {!isMobile && (
           <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-            {/* Left side decoration */}
             <div className="absolute top-1/2 left-10 transform -translate-y-1/2">
               <motion.div 
                 className="w-1 h-64 bg-gradient-to-b from-transparent via-white/30 to-transparent"
@@ -143,7 +186,6 @@ export default function PedroBurnStats() {
               />
             </div>
 
-            {/* Right side decoration */}
             <div className="absolute top-1/2 right-10 transform -translate-y-1/2">
               <motion.div 
                 className="w-1 h-64 bg-gradient-to-b from-transparent via-white/30 to-transparent"
@@ -155,9 +197,7 @@ export default function PedroBurnStats() {
           </div>
         )}
 
-        {/* Central content */}
         <div className="container mx-auto px-4 py-8 md:py-12 relative z-10">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -180,108 +220,106 @@ export default function PedroBurnStats() {
             />
           </motion.div>
 
-          {/* Main Burn Counter */}
-          <div className="flex flex-col items-center mb-12 md:mb-20 relative">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mb-6 md:mb-8"
-            >
-              <FaFire className="text-5xl md:text-6xl" />
-            </motion.div>
-            
-            <h2 className="text-lg md:text-2xl mb-3 md:mb-4">TOTAL PEDRO BURNED</h2>
-            
-            <div className="relative">
-              <AnimatePresence mode="wait">
+          {error ? (
+            <div className="text-center text-red-400 mb-8">
+              Error loading data: {error}
+            </div>
+          ) : isLoading ? (
+            <div className="text-center mb-8">
+              Loading burn data...
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col items-center mb-12 md:mb-20 relative">
                 <motion.div
-                  key={displayedNumber}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="text-4xl md:text-7xl font-bold mb-2 font-mono"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="mb-6 md:mb-8"
                 >
-                  {displayedNumber.toLocaleString()}
+                  <FaFire className="text-5xl md:text-6xl" />
                 </motion.div>
-              </AnimatePresence>
-            </div>
-            
-            <div className="text-base md:text-lg">PEDRO TOKENS</div>
-            
-            <motion.div 
-              className="w-full max-w-md h-3 md:h-4 bg-gray-800 rounded-full mt-4 md:mt-6 overflow-hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-            >
-              <motion.div 
-                className="h-full bg-gradient-to-r from-gray-300 to-white"
-                initial={{ width: 0 }}
-                animate={{ width: `${(burnedAmount / totalSupply) * 100}%` }}
-                transition={{ delay: 0.8, duration: 1.5, type: 'spring' }}
-              />
-            </motion.div>
-            <div className="text-xs md:text-sm mt-2 text-gray-300">
-              {((burnedAmount / totalSupply) * 100).toFixed(2)}% of total supply burned
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
-            {/* Holders Card */}
-            <motion.div 
-              className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              whileHover={{ y: isMobile ? 0 : -5 }}
-            >
-              <div className="flex items-center gap-3 mb-3 md:mb-4">
-                <div className="p-2 md:p-3 rounded-full border border-white/20">
-                  <FaUsers className="text-lg md:text-xl" />
+                
+                <h2 className="text-lg md:text-2xl mb-3 md:mb-4">TOTAL PEDRO BURNED</h2>
+                
+                <div className="relative">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={displayedNumber}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="text-4xl md:text-7xl font-bold mb-2 font-mono"
+                    >
+                      {displayedNumber.toLocaleString()}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
-                <h3 className="text-lg md:text-xl">HOLDERS</h3>
+                
+                <div className="text-base md:text-lg">PEDRO TOKENS</div>
+                
+                {burnData && (
+                  <>
+                    <motion.div 
+                      className="w-full max-w-md h-3 md:h-4 bg-gray-800 rounded-full mt-4 md:mt-6 overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7 }}
+                    >
+                      <motion.div 
+                        className="h-full bg-gradient-to-r from-gray-300 to-white"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(burnData.total_burn / burnData.total_supply) * 100}%` }}
+                        transition={{ delay: 0.8, duration: 1.5, type: 'spring' }}
+                      />
+                    </motion.div>
+                    <div className="text-xs md:text-sm mt-2 text-gray-300">
+                      {((burnData.total_burn / burnData.total_supply) * 100).toFixed(2)}% of total supply burned
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="text-2xl md:text-3xl font-mono">{holders.toLocaleString()}</div>
-            </motion.div>
 
-            {/* Circulating Supply Card */}
-            <motion.div 
-              className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              whileHover={{ y: isMobile ? 0 : -5 }}
-            >
-              <div className="flex items-center gap-3 mb-3 md:mb-4">
-                <div className="p-2 md:p-3 rounded-full border border-white/20">
-                  <FaCoins className="text-lg md:text-xl" />
-                </div>
-                <h3 className="text-lg md:text-xl">CIRCULATING SUPPLY</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
+                <motion.div 
+                  className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  whileHover={{ y: isMobile ? 0 : -5 }}
+                >
+                  <div className="flex items-center gap-3 mb-3 md:mb-4">
+                    <div className="p-2 md:p-3 rounded-full border border-white/20">
+                      <FaCoins className="text-lg md:text-xl" />
+                    </div>
+                    <h3 className="text-lg md:text-xl">TOTAL SUPPLY</h3>
+                  </div>
+                  <div className="text-2xl md:text-3xl font-mono">
+                    {burnData ? burnData.total_supply.toLocaleString() : '--'}
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  whileHover={{ y: isMobile ? 0 : -5 }}
+                >
+                  <div className="flex items-center gap-3 mb-3 md:mb-4">
+                    <div className="p-2 md:p-3 rounded-full border border-white/20">
+                      <FaCoins className="text-lg md:text-xl" />
+                    </div>
+                    <h3 className="text-lg md:text-xl">CIRCULATING SUPPLY</h3>
+                  </div>
+                  <div className="text-2xl md:text-3xl font-mono">
+                    {burnData ? burnData.circulation_supply.toLocaleString() : '--'}
+                  </div>
+                </motion.div>
               </div>
-              <div className="text-2xl md:text-3xl font-mono">{circulatingSupply.toLocaleString()}</div>
-            </motion.div>
+            </>
+          )}
 
-            {/* Top 10 Holders Card */}
-            <motion.div 
-              className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              whileHover={{ y: isMobile ? 0 : -5 }}
-            >
-              <div className="flex items-center gap-3 mb-3 md:mb-4">
-                <div className="p-2 md:p-3 rounded-full border border-white/20">
-                  <FaPercentage className="text-lg md:text-xl" />
-                </div>
-                <h3 className="text-lg md:text-xl">TOP 10 HOLDERS</h3>
-              </div>
-              <div className="text-2xl md:text-3xl font-mono">{top10HoldersPercent}%</div>
-            </motion.div>
-          </div>
-
-          {/* Last Updated with Images */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -293,17 +331,17 @@ export default function PedroBurnStats() {
                 onClick={handleRefresh}
                 className="p-1 rounded-full hover:bg-white/20 transition-colors"
                 aria-label="Refresh data"
+                disabled={isLoading}
               >
                 <motion.div
                   animate={controls}
                 >
-                  <FaSyncAlt />
+                  <FaSyncAlt className={isLoading ? 'animate-spin' : ''} />
                 </motion.div>
               </button>
               <span>Last updated: {lastUpdated || 'Loading...'}</span>
             </div>
             
-            {/* Image gallery */}
             <div className="flex flex-wrap justify-center gap-2 md:gap-4 mt-6 md:mt-8 max-w-4xl mx-auto">
               {[1, 2, 3, 4].map((item, index) => (
                 <motion.div

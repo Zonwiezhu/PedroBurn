@@ -263,100 +263,86 @@ const PriceReductionChart = () => {
   }
 
   const data: ChartData[] = [
-    { milestone: '300M Burned', burned: 300, reduction: 0, price: '100%', priceValue: 1.0 },
-    { milestone: '400M Burned', burned: 400, reduction: 50, price: '50%', priceValue: 0.5 },
-    { milestone: '500M Burned', burned: 500, reduction: 75, price: '25%', priceValue: 0.25 },
-    { milestone: '600M Burned', burned: 600, reduction: 87.5, price: '12.5%', priceValue: 0.125 },
-    { milestone: '700M Burned', burned: 700, reduction: 93.75, price: '6.25%', priceValue: 0.0625 },
-    { milestone: '800M Burned', burned: 800, reduction: 96.875, price: '3.125%', priceValue: 0.03125 },
+    { milestone: '300M', burned: 300, reduction: 0, price: '100%', priceValue: 1.0 },
+    { milestone: '400M', burned: 400, reduction: 50, price: '50%', priceValue: 0.5 },
+    { milestone: '500M', burned: 500, reduction: 75, price: '25%', priceValue: 0.25 },
+    { milestone: '600M', burned: 600, reduction: 87.5, price: '12.5%', priceValue: 0.125 },
+    { milestone: '700M', burned: 700, reduction: 93.75, price: '6.25%', priceValue: 0.0625 },
+    { milestone: '800M', burned: 800, reduction: 96.875, price: '3.125%', priceValue: 0.03125 },
   ];
 
   const originalPrice = 100000;
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const currentPrice = originalPrice * payload[0].payload.priceValue;
+      return (
+        <div className="bg-black/90 p-3 rounded-lg border border-white/30 text-xs">
+          <p className="font-bold">{payload[0].payload.milestone} Burned</p>
+          <p className="text-white/80">Price Reduction: {payload[0].payload.price}</p>
+          <p className="text-green-400">CV Submitting: ~{Math.round(currentPrice / 1000)}k $PEDRO</p>
+          <p className="text-purple-400">NFT Generator: ~{Math.round(currentPrice / 1000)}k $PEDRO</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
-      <BarChart
-        data={data}
-        layout="vertical"
-        margin={isMobile ? 
-          { top: 10, right: 10, left: 10, bottom: 30 } : 
-          { top: 20, right: 30, left: 60, bottom: 30 }
-        }
-      >
-        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" horizontal={false} />
-        
-        <XAxis 
-          type="number" 
-          domain={[0, 100]}
-          tickFormatter={(value) => `${value}%`}
-          axisLine={false}
-          tick={{ fill: 'white', fontSize: isMobile ? 8 : 10 }}
-        />
-        
-        <XAxis 
-          type="number" 
-          hide={true}
-          xAxisId="burned-axis"
-          domain={[0, 100]}
-        />
-        
-        <YAxis 
-          dataKey="milestone" 
-          type="category" 
-          width={isMobile ? 50 : 100}
-          tick={{ fontSize: isMobile ? 8 : 10, fill: 'white' }}
-          axisLine={false}
-        />
-        
-        <Tooltip 
-          formatter={(value: number, name: string, props: any) => {
-            if (name === 'reduction') {
-              const currentPrice = originalPrice * props.payload.priceValue;
-              return [
-                `CV Submitting: ${Math.round(currentPrice / 1000)}k $PEDRO`,
-                `NFT Generator: ${Math.round(currentPrice / 1000)}k $PEDRO`
-              ];
-            }
-            if (name === 'burned') {
-              return [`${value}M $PEDRO burned`, ''];
-            }
-            return [value, name];
-          }}
-          labelFormatter={(label) => `${label}`}
-          contentStyle={{
-            background: 'rgba(0, 0, 0, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: isMobile ? '10px' : '12px'
-          }}
-        />
-        
-        <Bar 
-          dataKey="reduction" 
-          name="Price Reduction"
-          animationDuration={1500}
-          radius={[0, 4, 4, 0]}
-          fill="#ffffff"
+    <div className="w-full">
+      <div className="mb-2">
+        <h3 className="text-sm font-bold">Tokens Burned</h3>
+      </div>
+      
+      <ResponsiveContainer width="100%" height={isMobile ? 250 : 350}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={isMobile ? 
+            { top: 5, right: 5, left: 5, bottom: 20 } : 
+            { top: 10, right: 20, left: 40, bottom: 30 }
+          }
         >
-          <LabelList 
-            dataKey="price" 
-            position="right" 
-            fill="#ffffff"
-            fontSize={isMobile ? 8 : 10}
-            offset={isMobile ? 5 : 10}
+          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" horizontal={false} />
+          
+          <XAxis 
+            type="number" 
+            domain={[0, 100]}
+            tickFormatter={(value) => `${value}%`}
+            axisLine={false}
+            tick={{ fill: 'white', fontSize: isMobile ? 8 : 10 }}
+            tickMargin={isMobile ? 5 : 10}
           />
-        </Bar>
-        
-        <Bar 
-          dataKey="burned" 
-          xAxisId="burned-axis"
-          name="Tokens Burned"
-          fill="transparent"
-        >
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+          
+          <YAxis 
+            dataKey="milestone" 
+            type="category" 
+            width={isMobile ? 30 : 60}
+            tick={{ fontSize: isMobile ? 9 : 11, fill: 'white' }}
+            axisLine={false}
+            tickMargin={isMobile ? 5 : 10}
+          />
+          
+          <Tooltip content={<CustomTooltip />} />
+          
+          <Bar 
+            dataKey="reduction" 
+            name="Price Reduction"
+            animationDuration={1500}
+            radius={[0, 4, 4, 0]}
+            fill="#ffffff80"
+          >
+            <LabelList 
+              dataKey="price" 
+              position="right" 
+              fill="#ffffff"
+              fontSize={isMobile ? 9 : 11}
+              offset={isMobile ? 5 : 10}
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
@@ -486,7 +472,7 @@ export default function PedroBurnBenefits() {
             <div className="mt-6 md:mt-12">
               <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Service Price Reduction Schedule</h3>
               
-              <div className={`${isMobile ? 'h-[300px]' : 'h-[400px]'} w-full bg-black/50 p-2 rounded-xl border border-white/30 backdrop-blur-sm`}>
+              <div className={`w-full bg-black/50 p-2 md:p-4 rounded-xl border border-white/30 backdrop-blur-sm`}>
                 <PriceReductionChart />
               </div>
             </div>
