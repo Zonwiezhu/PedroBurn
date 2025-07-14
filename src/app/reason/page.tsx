@@ -446,7 +446,7 @@ export default function PedroBurnBenefits() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              REASON
+              PEDRO REASON
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}
@@ -464,13 +464,13 @@ export default function PedroBurnBenefits() {
             className="bg-black p-3 md:p-6 rounded-xl border border-white/30 mx-auto backdrop-blur-sm bg-opacity-20"
           >
             <div className="text-center mb-3 md:mb-5">
-              <h2 className={`${isMobile ? 'text-xl' : 'text-2xl md:text-3xl'} font-bold mb-3`}>The PEDRO Burn Mechanism</h2>
+              <h2 className={`${isMobile ? 'text-xl' : 'text-2xl md:text-3xl'} font-bold mb-3`}>The PEDRO Burn</h2>
             </div>
 
             <PedroBurnDiagram />
 
             <div className="mt-6 md:mt-12">
-              <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Service Price Reduction Schedule</h3>
+              <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Price Reduction</h3>
               
               <div className={`w-full bg-black/50 p-2 md:p-4 rounded-xl border border-white/30 backdrop-blur-sm`}>
                 <PriceReductionChart />
@@ -478,7 +478,7 @@ export default function PedroBurnBenefits() {
             </div>
 
             <div className="mt-6 md:mt-12">
-              <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Detailed Benefits</h3>
+              <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Burn Benefits</h3>
               <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 lg:grid-cols-3 gap-3'} mt-3 md:mt-6`}>
                 {benefits.map((benefit, index) => (
                   <motion.div
@@ -500,7 +500,7 @@ export default function PedroBurnBenefits() {
             </div>
 
             <div className="mt-6 md:mt-12">
-              <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Where You Can Burn PEDRO</h3>
+              <h3 className={`${isMobile ? 'text-lg' : 'text-2xl md:text-3xl'} font-bold text-center mb-3 md:mb-5`}>Where Burn PEDRO</h3>
               <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'} mt-3 md:mt-6`}>
                 {burnPlatforms.map((platform, index) => (
                   <motion.div

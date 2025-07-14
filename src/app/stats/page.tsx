@@ -209,7 +209,7 @@ export default function PedroBurnStats() {
               className="inline-block"
             >
               <h1 className="text-3xl md:text-6xl font-bold mb-4">
-                TOKEN PEDRO
+                PEDRO STATS
               </h1>
             </motion.div>
             <motion.div 
