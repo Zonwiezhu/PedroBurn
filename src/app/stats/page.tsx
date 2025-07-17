@@ -41,7 +41,7 @@ export default function PedroBurnStats() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/pedro_burn/');
+        const response = await fetch('https://api.pedroinjraccoon.online/pedro_burn/');
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
@@ -90,7 +90,7 @@ export default function PedroBurnStats() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://127.0.0.1:8000/pedro_burn/');
+      const response = await fetch('https://api.pedroinjraccoon.online/pedro_burn/');
       if (!response.ok) {
         throw new Error('Failed to fetch data');
       }

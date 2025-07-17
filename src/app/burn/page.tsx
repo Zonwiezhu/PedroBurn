@@ -64,19 +64,14 @@ const TokenBurnPage = () => {
   const formatNumber = (value: string, decimals: number): string => {
     if (!value || value === '0') return `0,${'0'.repeat(decimals)}`;
     
-    // Remove all non-numeric characters except comma and period
     const cleanValue = value.replace(/[^0-9,.]/g, '');
     
-    // Normalize to use comma as decimal separator
     const normalized = cleanValue.replace(/\./g, '').replace(',', '.');
     
-    // Split into integer and fractional parts
     const [integerPart, fractionalPart = ''] = normalized.split('.');
     
-    // Pad fractional part with zeros if needed
     const paddedFractional = fractionalPart.padEnd(decimals, '0').slice(0, decimals);
     
-    // Format integer part with thousands separators
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     
     return `${formattedInteger},${paddedFractional}`;
@@ -198,7 +193,7 @@ const TokenBurnPage = () => {
       localStorage.setItem("connectedWalletAddress", address);
       setWalletAddress(address);
       
-      const tokenResponse = await fetch(`http://127.0.0.1:8000/token_balances/inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49/`);
+      const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49/`);
       const tokenResult: TokenApiResponse = await tokenResponse.json();
       
       const formattedTokens = tokenResult.token_info.map(token => ({
@@ -727,16 +722,13 @@ const TokenBurnPage = () => {
                             type="text"
                             value={token.burnAmount}
                             onChange={(e) => {
-                              // Allow only numbers, comma, and period
                               const value = e.target.value.replace(/[^0-9,.]/g, '');
                               
-                              // Ensure only one decimal separator
                               const hasComma = value.includes(',');
                               const hasPeriod = value.includes('.');
                               let cleanedValue = value;
                               
                               if (hasComma && hasPeriod) {
-                                // If both are present, keep the first one encountered
                                 const commaIndex = value.indexOf(',');
                                 const periodIndex = value.indexOf('.');
                                 cleanedValue = commaIndex < periodIndex 
@@ -744,7 +736,6 @@ const TokenBurnPage = () => {
                                   : value.replace(/,/g, '');
                               }
                               
-                              // Ensure no more than specified decimals
                               const decimalSeparatorIndex = Math.max(
                                 cleanedValue.indexOf(','),
                                 cleanedValue.indexOf('.')
