@@ -64,28 +64,28 @@ const TokenBurnPage = () => {
   const formatNumber = (value: string, decimals: number): string => {
     if (!value || value === '0') return `0,${'0'.repeat(decimals)}`;
     
-    // Remove all formatting characters
-    const cleanValue = value.replace(/[^0-9]/g, '');
+    // Remove all non-numeric characters except comma and period
+    const cleanValue = value.replace(/[^0-9,.]/g, '');
     
-    // Pad with leading zeros to ensure we have enough digits
-    const paddedValue = cleanValue.padStart(decimals + 1, '0');
+    // Normalize to use comma as decimal separator
+    const normalized = cleanValue.replace(/\./g, '').replace(',', '.');
     
     // Split into integer and fractional parts
-    const integerPart = paddedValue.slice(0, -decimals) || '0';
-    const fractionalPart = paddedValue.slice(-decimals);
+    const [integerPart, fractionalPart = ''] = normalized.split('.');
     
-    // Add thousands separators to integer part
+    // Pad fractional part with zeros if needed
+    const paddedFractional = fractionalPart.padEnd(decimals, '0').slice(0, decimals);
+    
+    // Format integer part with thousands separators
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     
-    return `${formattedInteger},${fractionalPart}`;
+    return `${formattedInteger},${paddedFractional}`;
   };
 
   const setMaxAmount = (tokenAddress: string) => {
     setTokens(prev => prev.map(token => {
       if (token.denom === tokenAddress) {
-        // Format the raw amount with all decimals
-        const formattedAmount = formatNumber(token.amount, token.decimals);
-        return { ...token, burnAmount: formattedAmount };
+        return { ...token, burnAmount: token.amount };
       }
       return token;
     }));
@@ -251,55 +251,78 @@ const TokenBurnPage = () => {
     localStorage.removeItem("connectedWalletAddress");
   };
 
+  const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
+    if (!amount || amount === '0') return { 
+      burnAmount: `0,${'0'.repeat(decimals)}`, 
+      remainingAmount: `0,${'0'.repeat(decimals)}` 
+    };
+
+    // Helper function to convert formatted display string to raw bigint
+    const parseFormattedAmount = (formatted: string): bigint => {
+      if (!formatted) return BigInt(0);
+      
+      // Remove all thousands separators and normalize decimal separator
+      const cleanValue = formatted.replace(/\./g, '').replace(',', '.');
+      
+      // Split into integer and fractional parts
+      const [integerPart, fractionalPart = ''] = cleanValue.split('.');
+      
+      // Pad fractional part with zeros to maintain full precision
+      const paddedFractional = fractionalPart.padEnd(decimals, '0').slice(0, decimals);
+      
+      // Combine into a single integer string representing the full amount in smallest units
+      const fullAmountStr = integerPart + paddedFractional;
+      
+      return BigInt(fullAmountStr || '0');
+    };
+
+    // Helper function to format raw bigint back to display string
+    const formatDisplayAmount = (raw: bigint): string => {
+      const rawStr = raw.toString().padStart(decimals + 1, '0');
+      const integerPart = rawStr.slice(0, -decimals) || '0';
+      const fractionalPart = rawStr.slice(-decimals);
+      
+      // Add thousands separators to integer part
+      const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      
+      return `${formattedInteger},${fractionalPart}`;
+    };
+
+    // Convert display strings to raw bigints
+    const amountRaw = parseFormattedAmount(amount);
+    const burnAmountRaw = parseFormattedAmount(burnAmount || '0');
+
+    // Calculate actual burn (can't burn more than available)
+    const actualBurnRaw = burnAmountRaw > amountRaw ? amountRaw : burnAmountRaw;
+    const remainingRaw = amountRaw - actualBurnRaw;
+
+    return {
+      burnAmount: formatDisplayAmount(actualBurnRaw),
+      remainingAmount: formatDisplayAmount(remainingRaw)
+    };
+  };
+
   const handleBurn = () => {
     const burnTransactions = tokens
       .filter(token => selectedTokens.includes(token.denom))
-      .map(token => ({
-        symbol: token.symbol,
-        amount: token.burnAmount || token.human_readable_amount,
-        denom: token.denom
-      }));
+      .map(token => {
+        const summary = getBurnSummary(token.human_readable_amount, token.burnAmount, token.decimals);
+        return {
+          symbol: token.symbol,
+          amount: summary.burnAmount,
+          remaining: summary.remainingAmount,
+          denom: token.denom
+        };
+      });
     
     alert(`Preparing to burn:\n${JSON.stringify(burnTransactions, null, 2)}`);
   };
 
-  const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
-    if (!amount) return { display: `0,${'0'.repeat(decimals)}`, actualBurn: `0,${'0'.repeat(decimals)}` };
-    
-    try {
-      // Remove formatting and parse as numbers
-      const cleanAmount = amount.replace(/\./g, '').replace(',', '.');
-      const cleanBurnAmount = burnAmount.replace(/\./g, '').replace(',', '.');
-      
-      const amountNum = parseFloat(cleanAmount);
-      const burnNum = parseFloat(cleanBurnAmount || '0');
-      
-      // Calculate actual burn (can't burn more than available)
-      const actualBurn = Math.min(burnNum, amountNum);
-      const remaining = amountNum - actualBurn;
-      
-      return {
-        display: `${formatNumber(amount, decimals)} - ${formatNumber(burnAmount, decimals)} = ${formatNumber(remaining.toString(), decimals)}`,
-        actualBurn: formatNumber(actualBurn.toString(), decimals)
-      };
-    } catch (e) {
-      console.error("Error in number calculation:", e);
-      return {
-        display: "Error in calculation",
-        actualBurn: `0,${'0'.repeat(decimals)}`
-      };
-    }
-  };
-
   const formatBalance = (amount: string, decimals: number) => {
     if (!amount) return `0,${'0'.repeat(decimals)}`;
-    
-    // If it's already in the correct format, return it
     if (/^\d{1,3}(?:\.\d{3})*,\d+$/.test(amount)) {
       return amount;
     }
-    
-    // Otherwise format it properly
     return formatNumber(amount, decimals);
   };
 
@@ -704,10 +727,37 @@ const TokenBurnPage = () => {
                             type="text"
                             value={token.burnAmount}
                             onChange={(e) => {
-                              const value = e.target.value
-                                .replace(/[^0-9,.]/g, '')
-                                .replace(/([,.])(?=.*[,.])/g, '');
-                              updateTokenAmount(token.denom, value);
+                              // Allow only numbers, comma, and period
+                              const value = e.target.value.replace(/[^0-9,.]/g, '');
+                              
+                              // Ensure only one decimal separator
+                              const hasComma = value.includes(',');
+                              const hasPeriod = value.includes('.');
+                              let cleanedValue = value;
+                              
+                              if (hasComma && hasPeriod) {
+                                // If both are present, keep the first one encountered
+                                const commaIndex = value.indexOf(',');
+                                const periodIndex = value.indexOf('.');
+                                cleanedValue = commaIndex < periodIndex 
+                                  ? value.replace(/\./g, '') 
+                                  : value.replace(/,/g, '');
+                              }
+                              
+                              // Ensure no more than specified decimals
+                              const decimalSeparatorIndex = Math.max(
+                                cleanedValue.indexOf(','),
+                                cleanedValue.indexOf('.')
+                              );
+                              
+                              if (decimalSeparatorIndex !== -1) {
+                                const fractionalPart = cleanedValue.slice(decimalSeparatorIndex + 1);
+                                if (fractionalPart.length > token.decimals) {
+                                  cleanedValue = cleanedValue.slice(0, decimalSeparatorIndex + 1 + token.decimals);
+                                }
+                              }
+                              
+                              updateTokenAmount(token.denom, cleanedValue);
                             }}
                             onBlur={(e) => {
                               const formatted = formatNumber(e.target.value, token.decimals);
@@ -833,10 +883,33 @@ const TokenBurnPage = () => {
                                   type="text" 
                                   value={token.burnAmount}
                                   onChange={(e) => {
-                                    const value = e.target.value
-                                      .replace(/[^0-9,.]/g, '')
-                                      .replace(/([,.])(?=.*[,.])/g, '');
-                                    updateTokenAmount(token.denom, value);
+                                    const value = e.target.value.replace(/[^0-9,.]/g, '');
+                                    
+                                    const hasComma = value.includes(',');
+                                    const hasPeriod = value.includes('.');
+                                    let cleanedValue = value;
+                                    
+                                    if (hasComma && hasPeriod) {
+                                      const commaIndex = value.indexOf(',');
+                                      const periodIndex = value.indexOf('.');
+                                      cleanedValue = commaIndex < periodIndex 
+                                        ? value.replace(/\./g, '') 
+                                        : value.replace(/,/g, '');
+                                    }
+                                    
+                                    const decimalSeparatorIndex = Math.max(
+                                      cleanedValue.indexOf(','),
+                                      cleanedValue.indexOf('.')
+                                    );
+                                    
+                                    if (decimalSeparatorIndex !== -1) {
+                                      const fractionalPart = cleanedValue.slice(decimalSeparatorIndex + 1);
+                                      if (fractionalPart.length > token.decimals) {
+                                        cleanedValue = cleanedValue.slice(0, decimalSeparatorIndex + 1 + token.decimals);
+                                      }
+                                    }
+                                    
+                                    updateTokenAmount(token.denom, cleanedValue);
                                   }}
                                   onBlur={(e) => {
                                     const formatted = formatNumber(e.target.value, token.decimals);
@@ -874,33 +947,42 @@ const TokenBurnPage = () => {
                     {tokens
                       .filter(token => selectedTokens.includes(token.denom))
                       .map(token => {
-                        const summary = getBurnSummary(token.amount, token.burnAmount, token.decimals);
+                        const { burnAmount, remainingAmount } = getBurnSummary(
+                          token.human_readable_amount,
+                          token.burnAmount,
+                          token.decimals
+                        );
+                        
                         return (
                           <motion.li 
                             key={token.denom} 
-                            className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
+                            className="py-2 border-b border-white/5 last:border-0"
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm">
-                                {token.symbol.charAt(0)}
-                              </div>
-                              <span className="truncate max-w-[100px] sm:max-w-none">{token.symbol}</span>
-                              {token.is_verified && (
-                                <span className="text-xs bg-green-900/50 text-green-400 px-1 rounded">
-                                  ✓
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm">
+                                  {token.symbol.charAt(0)}
+                                </div>
+                                <span className="truncate max-w-[100px] sm:max-w-none">
+                                  {token.symbol}
+                                  {token.is_verified && (
+                                    <span className="ml-2 text-xs bg-green-900/50 text-green-400 px-1 rounded">
+                                      ✓
+                                    </span>
+                                  )}
                                 </span>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="font-mono text-sm sm:text-base">
-                                {summary.actualBurn}
-                              </span>
-                              <span className="text-xs text-white/50 hidden sm:block">
-                                {summary.display}
-                              </span>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="font-mono text-sm sm:text-base">
+                                  Burning: {burnAmount}
+                                </span>
+                                <span className="font-mono text-sm text-white/50">
+                                  Remaining: {remainingAmount}
+                                </span>
+                              </div>
                             </div>
                           </motion.li>
                         );
