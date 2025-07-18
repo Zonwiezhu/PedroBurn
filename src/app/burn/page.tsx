@@ -252,42 +252,33 @@ const TokenBurnPage = () => {
       remainingAmount: `0,${'0'.repeat(decimals)}` 
     };
 
-    // Helper function to convert formatted display string to raw bigint
     const parseFormattedAmount = (formatted: string): bigint => {
       if (!formatted) return BigInt(0);
       
-      // Remove all thousands separators and normalize decimal separator
       const cleanValue = formatted.replace(/\./g, '').replace(',', '.');
       
-      // Split into integer and fractional parts
       const [integerPart, fractionalPart = ''] = cleanValue.split('.');
       
-      // Pad fractional part with zeros to maintain full precision
       const paddedFractional = fractionalPart.padEnd(decimals, '0').slice(0, decimals);
       
-      // Combine into a single integer string representing the full amount in smallest units
       const fullAmountStr = integerPart + paddedFractional;
       
       return BigInt(fullAmountStr || '0');
     };
 
-    // Helper function to format raw bigint back to display string
     const formatDisplayAmount = (raw: bigint): string => {
       const rawStr = raw.toString().padStart(decimals + 1, '0');
       const integerPart = rawStr.slice(0, -decimals) || '0';
       const fractionalPart = rawStr.slice(-decimals);
       
-      // Add thousands separators to integer part
       const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       
       return `${formattedInteger},${fractionalPart}`;
     };
 
-    // Convert display strings to raw bigints
     const amountRaw = parseFormattedAmount(amount);
     const burnAmountRaw = parseFormattedAmount(burnAmount || '0');
 
-    // Calculate actual burn (can't burn more than available)
     const actualBurnRaw = burnAmountRaw > amountRaw ? amountRaw : burnAmountRaw;
     const remainingRaw = amountRaw - actualBurnRaw;
 

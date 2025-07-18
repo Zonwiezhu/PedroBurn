@@ -275,13 +275,13 @@ export default function PedroBurnStats() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
                 <motion.div 
-                  className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
+                  className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm text-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                   whileHover={{ y: isMobile ? 0 : -5 }}
                 >
-                  <div className="flex items-center gap-3 mb-3 md:mb-4">
+                  <div className="flex items-center justify-center gap-3 mb-3 md:mb-4">
                     <div className="p-2 md:p-3 rounded-full border border-white/20">
                       <FaCoins className="text-lg md:text-xl" />
                     </div>
@@ -293,13 +293,13 @@ export default function PedroBurnStats() {
                 </motion.div>
 
                 <motion.div 
-                  className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm"
+                  className="border border-white/20 bg-black/50 p-4 md:p-6 rounded-lg backdrop-blur-sm text-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                   whileHover={{ y: isMobile ? 0 : -5 }}
                 >
-                  <div className="flex items-center gap-3 mb-3 md:mb-4">
+                  <div className="flex items-center justify-center gap-3 mb-3 md:mb-4">
                     <div className="p-2 md:p-3 rounded-full border border-white/20">
                       <FaCoins className="text-lg md:text-xl" />
                     </div>
