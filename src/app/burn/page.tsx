@@ -562,7 +562,7 @@ const TokenBurnPage = () => {
                 <div className="absolute inset-0 bg-white/5 rounded-full blur-xl"></div>
                 <div className="absolute inset-4 border-2 border-white/10 rounded-full"></div>
                 <Image
-                  src={`/pedro${currentPedroImage}.png`}
+                  src={`/Pedro${currentPedroImage}.png`}
                   alt="Pedro animation"
                   width={256}
                   height={256}

@@ -64,16 +64,9 @@ export default function PedroBurnStats() {
         
         const updateNumber = () => {
           const now = Date.now();
-          const progress = Math.min(1, (now - startTime) / (endTime - startTime));
-          const easedProgress = 1 - Math.pow(1 - progress, 3);
-          const currentNumber = Math.floor(easedProgress * burnData.total_burn);
+          console.log(burnData.total_burn)
+          const currentNumber = Math.floor(burnData.total_burn);
           setDisplayedNumber(currentNumber);
-          
-          if (now < endTime) {
-            requestAnimationFrame(updateNumber);
-          } else {
-            setDisplayedNumber(Math.round(burnData.total_burn));
-          }
         };
         
         updateNumber();
@@ -353,7 +346,7 @@ export default function PedroBurnStats() {
                   whileHover={{ scale: isMobile ? 1 : 1.1, zIndex: 10 }}
                 >
                   <Image 
-                    src={`/pedro${item}.png`}
+                    src={`/Pedro${item}.png`}
                     alt={`Pedro ${item}`}
                     fill
                     className="object-cover"
