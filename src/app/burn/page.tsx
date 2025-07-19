@@ -193,7 +193,7 @@ const TokenBurnPage = () => {
       localStorage.setItem("connectedWalletAddress", address);
       setWalletAddress(address);
       
-      const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49/`);
+      const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${walletAddress}/`);
       const tokenResult: TokenApiResponse = await tokenResponse.json();
       
       const formattedTokens = tokenResult.token_info.map(token => ({
@@ -253,9 +253,10 @@ const TokenBurnPage = () => {
     };
 
     const parseFormattedAmount = (formatted: string): bigint => {
+
       if (!formatted) return BigInt(0);
       
-      const cleanValue = formatted.replace(/\./g, '').replace(',', '.');
+      const cleanValue = formatted.replace(/\./g, '').replace('.', ',');
       
       const [integerPart, fractionalPart = ''] = cleanValue.split('.');
       
