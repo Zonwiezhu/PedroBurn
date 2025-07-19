@@ -198,7 +198,7 @@ const TokenBurnPage = () => {
         amount: token.amount,
         burnAmount: "",
         decimals: token.decimals,
-        human_readable_amount: token.amount,
+        human_readable_amount: token.human_readable_amount,
         logo: token.logo,
         description: token.description,
         native: token.denom === 'inj',
@@ -242,7 +242,6 @@ const TokenBurnPage = () => {
   };
 
 const getBurnSummary = (amount: string, burnAmount: string) => {
-  // Handle empty/zero amount case
   if (!amount || amount === '0') {
     return { 
       burnAmount: '0',
@@ -250,14 +249,11 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
     };
   }
 
-  // Convert string inputs to numbers for comparison
   const amountNum = Number(amount);
   const burnAmountNum = Number(burnAmount || '0');
 
-  // Calculate actual burn amount (can't burn more than available)
   const actualBurn = Math.min(burnAmountNum, amountNum);
   
-  // Calculate remaining amount
   const remaining = amountNum - actualBurn;
 
   return {
@@ -679,38 +675,10 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                               ALL
                             </button>
                           </div>
+
                           <input
                             type="text"
                             value={token.burnAmount}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^0-9,.]/g, '');
-                              
-                              const hasComma = value.includes(',');
-                              const hasPeriod = value.includes('.');
-                              let cleanedValue = value;
-                              
-                              if (hasComma && hasPeriod) {
-                                const commaIndex = value.indexOf(',');
-                                const periodIndex = value.indexOf('.');
-                                cleanedValue = commaIndex < periodIndex 
-                                  ? value.replace(/\./g, '') 
-                                  : value.replace(/,/g, '');
-                              }
-                              
-                              const decimalSeparatorIndex = Math.max(
-                                cleanedValue.indexOf(','),
-                                cleanedValue.indexOf('.')
-                              );
-                              
-                              if (decimalSeparatorIndex !== -1) {
-                                const fractionalPart = cleanedValue.slice(decimalSeparatorIndex + 1);
-                                if (fractionalPart.length > token.decimals) {
-                                  cleanedValue = cleanedValue.slice(0, decimalSeparatorIndex + 1 + token.decimals);
-                                }
-                              }
-                              
-                              updateTokenAmount(token.denom, cleanedValue);
-                            }}
                             onBlur={(e) => {
                               const formatted = formatNumber(e.target.value, token.decimals);
                               updateTokenAmount(token.denom, formatted);
@@ -718,6 +686,7 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                             className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
                           />
                         </div>
+
                       </motion.div>
                     );
                   })}
