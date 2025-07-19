@@ -56,11 +56,6 @@ const TokenBurnPage = () => {
     return name.length > 20 ? `${name.substring(0, 14)}...` : name;
   };
 
-  const formatDenom = (denom: string) => {
-    if (denom.length <= 8) return denom;
-    return `${denom.substring(0, 4)}...${denom.slice(-4)}`;
-  };
-
   const formatNumber = (value: string, decimals: number): string => {
     if (!value || value === '0') return `0,${'0'.repeat(decimals)}`;
     
@@ -203,7 +198,7 @@ const TokenBurnPage = () => {
         amount: token.amount,
         burnAmount: "",
         decimals: token.decimals,
-        human_readable_amount: formatNumber(token.amount, token.decimals),
+        human_readable_amount: token.amount,
         logo: token.logo,
         description: token.description,
         native: token.denom === 'inj',
@@ -246,54 +241,36 @@ const TokenBurnPage = () => {
     localStorage.removeItem("connectedWalletAddress");
   };
 
-  const getBurnSummary = (amount: string, burnAmount: string, decimals: number) => {
-    if (!amount || amount === '0') return { 
-      burnAmount: `0,${'0'.repeat(decimals)}`, 
-      remainingAmount: `0,${'0'.repeat(decimals)}` 
+const getBurnSummary = (amount: string, burnAmount: string) => {
+  // Handle empty/zero amount case
+  if (!amount || amount === '0') {
+    return { 
+      burnAmount: '0',
+      remainingAmount: '0'
     };
+  }
 
-    const parseFormattedAmount = (formatted: string): bigint => {
+  // Convert string inputs to numbers for comparison
+  const amountNum = Number(amount);
+  const burnAmountNum = Number(burnAmount || '0');
 
-      if (!formatted) return BigInt(0);
-      
-      const cleanValue = formatted.replace(/\./g, '').replace('.', ',');
-      
-      const [integerPart, fractionalPart = ''] = cleanValue.split('.');
-      
-      const paddedFractional = fractionalPart.padEnd(decimals, '0').slice(0, decimals);
-      
-      const fullAmountStr = integerPart + paddedFractional;
-      
-      return BigInt(fullAmountStr || '0');
-    };
+  // Calculate actual burn amount (can't burn more than available)
+  const actualBurn = Math.min(burnAmountNum, amountNum);
+  
+  // Calculate remaining amount
+  const remaining = amountNum - actualBurn;
 
-    const formatDisplayAmount = (raw: bigint): string => {
-      const rawStr = raw.toString().padStart(decimals + 1, '0');
-      const integerPart = rawStr.slice(0, -decimals) || '0';
-      const fractionalPart = rawStr.slice(-decimals);
-      
-      const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-      
-      return `${formattedInteger},${fractionalPart}`;
-    };
-
-    const amountRaw = parseFormattedAmount(amount);
-    const burnAmountRaw = parseFormattedAmount(burnAmount || '0');
-
-    const actualBurnRaw = burnAmountRaw > amountRaw ? amountRaw : burnAmountRaw;
-    const remainingRaw = amountRaw - actualBurnRaw;
-
-    return {
-      burnAmount: formatDisplayAmount(actualBurnRaw),
-      remainingAmount: formatDisplayAmount(remainingRaw)
-    };
+  return {
+    burnAmount: actualBurn.toString(),
+    remainingAmount: remaining.toString()
   };
+};
 
   const handleBurn = () => {
     const burnTransactions = tokens
       .filter(token => selectedTokens.includes(token.denom))
       .map(token => {
-        const summary = getBurnSummary(token.human_readable_amount, token.burnAmount, token.decimals);
+        const summary = getBurnSummary(token.human_readable_amount, token.burnAmount);
         return {
           symbol: token.symbol,
           amount: summary.burnAmount,
@@ -303,14 +280,6 @@ const TokenBurnPage = () => {
       });
     
     alert(`Preparing to burn:\n${JSON.stringify(burnTransactions, null, 2)}`);
-  };
-
-  const formatBalance = (amount: string, decimals: number) => {
-    if (!amount) return `0,${'0'.repeat(decimals)}`;
-    if (/^\d{1,3}(?:\.\d{3})*,\d+$/.test(amount)) {
-      return amount;
-    }
-    return formatNumber(amount, decimals);
   };
 
   return (
@@ -695,7 +664,7 @@ const TokenBurnPage = () => {
                           <div>
                             <div className="text-white/50 text-sm mb-1">Balance</div>
                             <div className="text-sm font-mono">
-                              {formatBalance(token.human_readable_amount, token.decimals)}
+                              {token.human_readable_amount}
                             </div>
                           </div>
                         </div>
@@ -858,7 +827,7 @@ const TokenBurnPage = () => {
                             )}
                           </td>
                           <td className="px-6 py-4 text-right font-mono">
-                            {formatBalance(token.human_readable_amount, token.decimals)}
+                            {token.human_readable_amount}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex justify-end items-center gap-2">
@@ -932,8 +901,7 @@ const TokenBurnPage = () => {
                       .map(token => {
                         const { burnAmount, remainingAmount } = getBurnSummary(
                           token.human_readable_amount,
-                          token.burnAmount,
-                          token.decimals
+                          token.burnAmount
                         );
                         
                         return (
