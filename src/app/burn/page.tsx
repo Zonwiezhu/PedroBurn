@@ -193,7 +193,7 @@ const TokenBurnPage = () => {
       localStorage.setItem("connectedWalletAddress", address);
       setWalletAddress(address);
       
-      const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${walletAddress}/`);
+      const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${address}/`);
       const tokenResult: TokenApiResponse = await tokenResponse.json();
       
       const formattedTokens = tokenResult.token_info.map(token => ({
