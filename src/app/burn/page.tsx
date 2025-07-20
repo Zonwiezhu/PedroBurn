@@ -360,8 +360,10 @@ const TokenBurnPage = () => {
       };
 
       txHash = await broadcastTx(ChainId.Mainnet, txRawSigned);
-      
+
       setTxHash(txHash);
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${injectiveAddress}/`);
       const tokenResult: TokenApiResponse = await tokenResponse.json();
