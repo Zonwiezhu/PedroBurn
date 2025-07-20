@@ -921,7 +921,13 @@ const TokenBurnPage = () => {
                             {formatNumberForDisplay(token.human_readable_amount, token.decimals)}
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex justify-end items-center gap-2">
+                            <div className="flex justify-end items-center gap-6">
+                              <button 
+                                onClick={() => setMaxAmount(token.denom)}
+                                className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
+                              >
+                                ALL
+                              </button>
                               <input
                                   type="text" 
                                   value={token.burnAmount}
@@ -933,14 +939,8 @@ const TokenBurnPage = () => {
                                     const formatted = formatNumberForDisplay(e.target.value, token.decimals);
                                     updateTokenAmount(token.denom, formatted);
                                   }}
-                                  className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
+                                  className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all text-right"
                                 />
-                              <button 
-                                onClick={() => setMaxAmount(token.denom)}
-                                className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
-                              >
-                                ALL
-                              </button>
                             </div>
                           </td>
                         </motion.tr>
