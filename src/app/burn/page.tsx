@@ -192,6 +192,9 @@ const TokenBurnPage = () => {
       const accounts = await offlineSigner.getAccounts();
       const address = accounts[0].address;
 
+      const message = "Welcome to Pedro's Burner!";
+      await wallet.signArbitrary(chainId, address, message);
+
       localStorage.setItem("connectedWalletType", walletType);
       localStorage.setItem("connectedWalletAddress", address);
       setWalletAddress(address);
