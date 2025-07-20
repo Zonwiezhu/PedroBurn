@@ -56,6 +56,7 @@ const TokenBurnPage = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBurning, setIsBurning] = useState(false);
 
   const formatTokenName = (name: string) => {
     if (!name) return 'Unknown Token';
@@ -272,7 +273,7 @@ const TokenBurnPage = () => {
 
 
 const handleBurn = async () => {
-
+  setIsBurning(true);
   try {
     const coins = tokens
       .filter(token => selectedTokens.includes(token.denom))
@@ -382,7 +383,10 @@ const handleBurn = async () => {
   } catch (apiError) {
     console.error('API error:', apiError);
     setModalMessage("Burn completed but failed to record on backend");
-  }};
+  } finally {
+    setIsBurning(false)
+  }
+};
 
 
   return (
@@ -997,23 +1001,32 @@ const handleBurn = async () => {
               )}
 
               <div className="flex justify-center m-8">
-                <motion.button
+               <motion.button
                   onClick={handleBurn}
-                  disabled={selectedTokens.length === 0}
+                  disabled={selectedTokens.length === 0 || isBurning}
                   className={`flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-lg font-bold transition-all relative overflow-hidden ${
-                    selectedTokens.length === 0
+                    selectedTokens.length === 0 || isBurning
                       ? 'bg-white/5 text-white/50 cursor-not-allowed border border-white/20'
                       : 'bg-white text-black hover:bg-white/90 shadow-lg border border-white'
                   }`}
-                  whileHover={selectedTokens.length > 0 ? { scale: 1.05 } : {}}
-                  whileTap={selectedTokens.length > 0 ? { scale: 0.95 } : {}}
+                  whileHover={selectedTokens.length > 0 && !isBurning ? { scale: 1.05 } : {}}
+                  whileTap={selectedTokens.length > 0 && !isBurning ? { scale: 0.95 } : {}}
                 >
-                  <FaFire className="text-orange-500" />
-                  BURN TOKENS
-                  {selectedTokens.length > 0 && (
-                    <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
-                      {selectedTokens.length}
-                    </span>
+                  {isBurning ? (
+                    <>
+                      <span className="loading-spinner mr-2"></span>
+                      BURNING...
+                    </>
+                  ) : (
+                    <>
+                      <FaFire className="text-orange-500" />
+                      BURN TOKENS
+                      {selectedTokens.length > 0 && (
+                        <span className="ml-2 bg-black/20 px-2 py-1 rounded text-sm font-mono">
+                          {selectedTokens.length}
+                        </span>
+                      )}
+                    </>
                   )}
                 </motion.button>
               </div>
