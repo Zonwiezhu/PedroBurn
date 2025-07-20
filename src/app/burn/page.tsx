@@ -293,6 +293,9 @@ const TokenBurnPage = () => {
             burnAmountNum = balanceNum;
           }
 
+          if (token.denom === 'factory/inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk/inj1c6lxety9hqn9q4khwqvjcfa24c2qeqvvfsg4fm') {
+            baseAmount = rawBurnAmount;
+          }
 
           return {
             denom: token.denom,
@@ -308,7 +311,7 @@ const TokenBurnPage = () => {
       const chainId = ChainId.Mainnet;
       await wallet.enable(chainId);
       const [account] = await wallet.getOfflineSigner(chainId).getAccounts();
-      const injectiveAddress = account.address;
+      injectiveAddress = account.address;
 
       const restEndpoint = "https://sentry.lcd.injective.network:443";
       const chainRestAuthApi = new ChainRestAuthApi(restEndpoint);
@@ -372,7 +375,6 @@ const TokenBurnPage = () => {
       };
 
       txHash = await broadcastTx(ChainId.Mainnet, txRawSigned);
-
       setTxHash(txHash);
 
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -397,7 +399,7 @@ const TokenBurnPage = () => {
       setTokens(formattedTokens);
       setSelectedTokens([]);
       
-      setModalMessage(`Your Burned Some Token!`);
+      setModalMessage(`Successfully burned tokens!`);
       setIsModalOpen(true);
       
     } catch (error) {
@@ -412,20 +414,24 @@ const TokenBurnPage = () => {
         token.denom === 'factory/inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk/inj1c6lxety9hqn9q4khwqvjcfa24c2qeqvvfsg4fm'
       );
 
-      if (hasSpecialDenom) {
-        const response = await fetch('https://api.pedroinjraccoon.online/burn/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            burn_data: {
-              srcInjectiveAddress: injectiveAddress,
-              baseAmount: baseAmount,
-              txHash: txHash,
-              reason: 'NFT-Tool-Special'
-            }
-          }),
-        });
-      }  
+      if (hasSpecialDenom && injectiveAddress && txHash && baseAmount) {
+        try {
+          const response = await fetch('https://api.pedroinjraccoon.online/burn/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              burn_data: {
+                srcInjectiveAddress: injectiveAddress,
+                baseAmount: baseAmount,
+                txHash: txHash,
+                reason: 'Burner Tool'
+              }
+            }),
+          });
+        } catch (apiError) {
+          console.error('API error:', apiError);
+        }
+      }
     }
   };
 
