@@ -1,11 +1,17 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiCheck, FiExternalLink } from 'react-icons/fi';
 import { FaFire } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Head from 'next/head';
 import { Window as KeplrWindow } from "@keplr-wallet/types";
+import { MsgSend, MsgBroadcasterWithPk, ChainRestAuthApi, BaseAccount, ChainRestTendermintApi, createTransaction, getTxRawFromTxRawOrDirectSignResponse, TxRaw, CosmosTxV1Beta1Tx, BroadcastModeKeplr } from '@injectivelabs/sdk-ts'
+import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from '@injectivelabs/utils'
+import { Network } from '@injectivelabs/networks'
+import { ChainId } from '@injectivelabs/ts-types';
+import { TransactionException } from '@injectivelabs/exceptions';
+
 
 declare global {
   interface Window extends KeplrWindow {}
@@ -264,21 +270,120 @@ const TokenBurnPage = () => {
     };
   };
 
-  const handleBurn = () => {
-    const burnTransactions = tokens
+
+const handleBurn = async () => {
+
+  try {
+    const coins = tokens
       .filter(token => selectedTokens.includes(token.denom))
       .map(token => {
-        const summary = getBurnSummary(token.human_readable_amount, token.burnAmount);
+        const rawBurnAmount = token.burnAmount || '0';
+        const amountNum = new BigNumberInBase(rawBurnAmount.replace(/,/g, ''));
+
         return {
-          symbol: token.symbol,
-          amount: summary.burnAmount,
-          remaining: summary.remainingAmount,
-          denom: token.denom
+          denom: token.denom,
+          amount: amountNum.toWei(token.decimals) .toFixed()
         };
-      });
+    });
+
+    const wallet = activeWalletType === 'leap' ? window.leap : window.keplr;
+    if (!wallet) {
+      throw new Error(`${activeWalletType} extension not installed`);
+    }
+
+    const chainId = ChainId.Mainnet;
+    await wallet.enable(chainId);
+    const [account] = await wallet.getOfflineSigner(chainId).getAccounts();
+    const injectiveAddress = account.address;
+
+    const restEndpoint = "https://sentry.lcd.injective.network:443";
+    const chainRestAuthApi = new ChainRestAuthApi(restEndpoint);
+    const accountDetailsResponse = await chainRestAuthApi.fetchAccount(injectiveAddress);
+    if (!accountDetailsResponse) {
+      throw new Error("Failed to fetch account details");
+    }
+    const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
+
+    const chainRestTendermintApi = new ChainRestTendermintApi(restEndpoint);
+    const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
+    const latestHeight = latestBlock.header.height;
+    const timeoutHeight = new BigNumberInBase(latestHeight).plus(DEFAULT_BLOCK_TIMEOUT_HEIGHT);
+
+    const msgs = coins.map(coin => 
+      MsgSend.fromJSON({
+        amount: {
+          amount: coin.amount,
+          denom: coin.denom,
+        },
+        srcInjectiveAddress: injectiveAddress,
+        dstInjectiveAddress: "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49",
+      })
+    );
+
+    const pubKey = await wallet.getKey(chainId);
+    if (!pubKey || !pubKey.pubKey) {
+      throw new Error("Failed to retrieve public key from wallet");
+    }
+
+    const { txRaw: finalTxRaw, signDoc } = createTransaction({
+      pubKey: Buffer.from(pubKey.pubKey).toString('base64'),
+      chainId,
+      fee: getStdFee(),
+      message: msgs,
+      sequence: baseAccount.sequence,
+      timeoutHeight: timeoutHeight.toNumber(),
+      accountNumber: baseAccount.accountNumber,
+      memo: "Token burn - PEDRO",
+    });
+
+    const offlineSigner = wallet.getOfflineSigner(chainId);
+    const directSignResponse = await offlineSigner.signDirect(injectiveAddress, signDoc);
+    const txRawSigned = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
+
+    const broadcastTx = async (chainId: string, txRaw: TxRaw) => {
+      const result = await wallet.sendTx(
+        chainId,
+        CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
+        BroadcastModeKeplr.Sync,
+      );
+
+      if (!result || result.length === 0) {
+        throw new TransactionException(
+          new Error('Transaction failed to be broadcasted'),
+          { contextModule: 'Wallet' },
+        );
+      }
+
+      return Buffer.from(result).toString('hex');
+    };
+
+    const txHash = await broadcastTx(ChainId.Mainnet, txRawSigned);
+
+    const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${injectiveAddress}/`);
+    const tokenResult: TokenApiResponse = await tokenResponse.json();
     
-    alert(`Preparing to burn:\n${JSON.stringify(burnTransactions, null, 2)}`);
-  };
+    const formattedTokens = tokenResult.token_info.map(token => ({
+      name: token.name || 'Unknown Token',
+      symbol: token.symbol || 'N/A',
+      denom: token.denom,
+      amount: token.amount,
+      burnAmount: "",
+      decimals: token.decimals,
+      human_readable_amount: token.human_readable_amount,
+      logo: token.logo,
+      description: token.description,
+      native: token.denom === 'inj',
+      is_verified: token.is_verified
+    }));
+          
+    setTokens(formattedTokens);
+    setSelectedTokens([]);
+
+  } catch (apiError) {
+    console.error('API error:', apiError);
+    setModalMessage("Burn completed but failed to record on backend");
+  }};
+
 
   return (
     <>
