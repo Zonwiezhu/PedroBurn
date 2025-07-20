@@ -12,7 +12,6 @@ import { Network } from '@injectivelabs/networks'
 import { ChainId } from '@injectivelabs/ts-types';
 import { TransactionException } from '@injectivelabs/exceptions';
 
-
 declare global {
   interface Window extends KeplrWindow {}
 }
@@ -57,24 +56,25 @@ const TokenBurnPage = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBurning, setIsBurning] = useState(false);
+  const [txHash, setTxHash] = useState("");
 
   const formatTokenName = (name: string) => {
     if (!name) return 'Unknown Token';
     return name.length > 20 ? `${name.substring(0, 14)}...` : name;
   };
 
- const formatNumberForDisplay = (value: string, decimals: number): string => {
-  if (!value || value === '0') return `0.00`;
-  
-  const numericValue = value.replace(/,/g, '');
-  
-  const roundedValue =Number(numericValue) * 100 / 100;
-  
-  return roundedValue.toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 10
-  });
-};
+  const formatNumberForDisplay = (value: string, decimals: number): string => {
+    if (!value || value === '0') return `0.00`;
+    
+    const numericValue = value.replace(/,/g, '');
+    
+    const roundedValue = Number(numericValue) * 100 / 100;
+    
+    return roundedValue.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 10
+    });
+  };
 
   const parseNumberInput = (value: string): string => {
     let cleaned = value.replace(/[^0-9.]/g, '');
@@ -271,123 +271,129 @@ const TokenBurnPage = () => {
     };
   };
 
+  const handleBurn = async () => {
+    setIsBurning(true);
+    let txHash = '';
+    
+    try {
+      const coins = tokens
+        .filter(token => selectedTokens.includes(token.denom))
+        .map(token => {
+          const rawBurnAmount = token.burnAmount || '0';
+          const amountNum = new BigNumberInBase(rawBurnAmount.replace(/,/g, ''));
 
-const handleBurn = async () => {
-  setIsBurning(true);
-  try {
-    const coins = tokens
-      .filter(token => selectedTokens.includes(token.denom))
-      .map(token => {
-        const rawBurnAmount = token.burnAmount || '0';
-        const amountNum = new BigNumberInBase(rawBurnAmount.replace(/,/g, ''));
+          return {
+            denom: token.denom,
+            amount: amountNum.toWei(token.decimals).toFixed()
+          };
+      });
 
-        return {
-          denom: token.denom,
-          amount: amountNum.toWei(token.decimals) .toFixed()
-        };
-    });
-
-    const wallet = activeWalletType === 'leap' ? window.leap : window.keplr;
-    if (!wallet) {
-      throw new Error(`${activeWalletType} extension not installed`);
-    }
-
-    const chainId = ChainId.Mainnet;
-    await wallet.enable(chainId);
-    const [account] = await wallet.getOfflineSigner(chainId).getAccounts();
-    const injectiveAddress = account.address;
-
-    const restEndpoint = "https://sentry.lcd.injective.network:443";
-    const chainRestAuthApi = new ChainRestAuthApi(restEndpoint);
-    const accountDetailsResponse = await chainRestAuthApi.fetchAccount(injectiveAddress);
-    if (!accountDetailsResponse) {
-      throw new Error("Failed to fetch account details");
-    }
-    const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
-
-    const chainRestTendermintApi = new ChainRestTendermintApi(restEndpoint);
-    const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
-    const latestHeight = latestBlock.header.height;
-    const timeoutHeight = new BigNumberInBase(latestHeight).plus(DEFAULT_BLOCK_TIMEOUT_HEIGHT);
-
-    const msgs = coins.map(coin => 
-      MsgSend.fromJSON({
-        amount: {
-          amount: coin.amount,
-          denom: coin.denom,
-        },
-        srcInjectiveAddress: injectiveAddress,
-        dstInjectiveAddress: "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49",
-      })
-    );
-
-    const pubKey = await wallet.getKey(chainId);
-    if (!pubKey || !pubKey.pubKey) {
-      throw new Error("Failed to retrieve public key from wallet");
-    }
-
-    const { txRaw: finalTxRaw, signDoc } = createTransaction({
-      pubKey: Buffer.from(pubKey.pubKey).toString('base64'),
-      chainId,
-      fee: getStdFee(),
-      message: msgs,
-      sequence: baseAccount.sequence,
-      timeoutHeight: timeoutHeight.toNumber(),
-      accountNumber: baseAccount.accountNumber,
-      memo: "Token burn - PEDRO",
-    });
-
-    const offlineSigner = wallet.getOfflineSigner(chainId);
-    const directSignResponse = await offlineSigner.signDirect(injectiveAddress, signDoc);
-    const txRawSigned = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
-
-    const broadcastTx = async (chainId: string, txRaw: TxRaw) => {
-      const result = await wallet.sendTx(
-        chainId,
-        CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
-        BroadcastModeKeplr.Sync,
-      );
-
-      if (!result || result.length === 0) {
-        throw new TransactionException(
-          new Error('Transaction failed to be broadcasted'),
-          { contextModule: 'Wallet' },
-        );
+      const wallet = activeWalletType === 'leap' ? window.leap : window.keplr;
+      if (!wallet) {
+        throw new Error(`${activeWalletType} extension not installed`);
       }
 
-      return Buffer.from(result).toString('hex');
-    };
+      const chainId = ChainId.Mainnet;
+      await wallet.enable(chainId);
+      const [account] = await wallet.getOfflineSigner(chainId).getAccounts();
+      const injectiveAddress = account.address;
 
-    const txHash = await broadcastTx(ChainId.Mainnet, txRawSigned);
+      const restEndpoint = "https://sentry.lcd.injective.network:443";
+      const chainRestAuthApi = new ChainRestAuthApi(restEndpoint);
+      const accountDetailsResponse = await chainRestAuthApi.fetchAccount(injectiveAddress);
+      if (!accountDetailsResponse) {
+        throw new Error("Failed to fetch account details");
+      }
+      const baseAccount = BaseAccount.fromRestApi(accountDetailsResponse);
 
-    const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${injectiveAddress}/`);
-    const tokenResult: TokenApiResponse = await tokenResponse.json();
-    
-    const formattedTokens = tokenResult.token_info.map(token => ({
-      name: token.name || 'Unknown Token',
-      symbol: token.symbol || 'N/A',
-      denom: token.denom,
-      amount: token.amount,
-      burnAmount: "",
-      decimals: token.decimals,
-      human_readable_amount: token.human_readable_amount,
-      logo: token.logo,
-      description: token.description,
-      native: token.denom === 'inj',
-      is_verified: token.is_verified
-    }));
-          
-    setTokens(formattedTokens);
-    setSelectedTokens([]);
+      const chainRestTendermintApi = new ChainRestTendermintApi(restEndpoint);
+      const latestBlock = await chainRestTendermintApi.fetchLatestBlock();
+      const latestHeight = latestBlock.header.height;
+      const timeoutHeight = new BigNumberInBase(latestHeight).plus(DEFAULT_BLOCK_TIMEOUT_HEIGHT);
 
-  } catch (apiError) {
-    console.error('API error:', apiError);
-    setModalMessage("Burn completed but failed to record on backend");
-  } finally {
-    setIsBurning(false)
-  }
-};
+      const msgs = coins.map(coin => 
+        MsgSend.fromJSON({
+          amount: {
+            amount: coin.amount,
+            denom: coin.denom,
+          },
+          srcInjectiveAddress: injectiveAddress,
+          dstInjectiveAddress: "inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49",
+        })
+      );
 
+      const pubKey = await wallet.getKey(chainId);
+      if (!pubKey || !pubKey.pubKey) {
+        throw new Error("Failed to retrieve public key from wallet");
+      }
+
+      const { txRaw: finalTxRaw, signDoc } = createTransaction({
+        pubKey: Buffer.from(pubKey.pubKey).toString('base64'),
+        chainId,
+        fee: getStdFee(),
+        message: msgs,
+        sequence: baseAccount.sequence,
+        timeoutHeight: timeoutHeight.toNumber(),
+        accountNumber: baseAccount.accountNumber,
+        memo: "Token burn - PEDRO",
+      });
+
+      const offlineSigner = wallet.getOfflineSigner(chainId);
+      const directSignResponse = await offlineSigner.signDirect(injectiveAddress, signDoc);
+      const txRawSigned = getTxRawFromTxRawOrDirectSignResponse(directSignResponse);
+
+      const broadcastTx = async (chainId: string, txRaw: TxRaw) => {
+        const result = await wallet.sendTx(
+          chainId,
+          CosmosTxV1Beta1Tx.TxRaw.encode(txRaw).finish(),
+          BroadcastModeKeplr.Sync,
+        );
+
+        if (!result || result.length === 0) {
+          throw new TransactionException(
+            new Error('Transaction failed to be broadcasted'),
+            { contextModule: 'Wallet' },
+          );
+        }
+
+        return Buffer.from(result).toString('hex');
+      };
+
+      txHash = await broadcastTx(ChainId.Mainnet, txRawSigned);
+      
+      setTxHash(txHash);
+
+      const tokenResponse = await fetch(`https://api.pedroinjraccoon.online/token_balances/${injectiveAddress}/`);
+      const tokenResult: TokenApiResponse = await tokenResponse.json();
+      
+      const formattedTokens = tokenResult.token_info.map(token => ({
+        name: token.name || 'Unknown Token',
+        symbol: token.symbol || 'N/A',
+        denom: token.denom,
+        amount: token.amount,
+        burnAmount: "",
+        decimals: token.decimals,
+        human_readable_amount: token.human_readable_amount,
+        logo: token.logo,
+        description: token.description,
+        native: token.denom === 'inj',
+        is_verified: token.is_verified
+      }));
+            
+      setTokens(formattedTokens);
+      setSelectedTokens([]);
+      
+      setModalMessage(`Your Burned Some Token!`);
+      setIsModalOpen(true);
+      
+    } catch (error) {
+      console.error('Burn error:', error);
+      setModalMessage(error instanceof Error ? error.message : "Burn failed");
+      setIsModalOpen(true);
+    } finally {
+      setIsBurning(false);
+    }
+  };
 
   return (
     <>
@@ -425,7 +431,7 @@ const handleBurn = async () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.8 }}
               >
-                PEDRO BURN
+                TOKEN BURN
               </motion.h1>
               <motion.div
                 initial={{ opacity: 0, scaleX: 0 }}
@@ -1059,12 +1065,32 @@ const handleBurn = async () => {
                 <div className="p-6">
                   <div className="flex justify-center mb-4">
                     <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
-                      <span className="text-2xl">⚠️</span>
+                      {txHash ? (
+                        <span className="text-2xl">🎉</span>
+                      ) : (
+                        <span className="text-2xl">⚠️</span>
+                      )}
                     </div>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-center text-white mb-2">Notice</h3>
-                  <p className="text-gray-300 text-center mb-6">{modalMessage}</p>
+                  <h3 className="text-xl font-bold text-center text-white mb-2">
+                    {txHash ? 'Success!' : 'Notice'}
+                  </h3>
+                  
+                  <p className="text-gray-300 text-center mb-4">{modalMessage}</p>
+                  
+                  {txHash && (
+                    <div className="mb-6 text-center">
+                      <a
+                        href={`https://explorer.injective.network/transaction/${txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline text-sm flex items-center justify-center gap-2"
+                      >
+                        View transaction <FiExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  )}
                   
                   <div className="flex justify-center">
                     <motion.button
@@ -1073,7 +1099,7 @@ const handleBurn = async () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      Got it
+                      {txHash ? 'Awesome!' : 'Got it'}
                     </motion.button>
                   </div>
                 </div>
