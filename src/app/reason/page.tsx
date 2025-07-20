@@ -387,7 +387,7 @@ export default function PedroBurnBenefits() {
       icon: <FaFire className="text-xs md:text-sm" />,
       title: "Burn Portal",
       description: "Send PEDRO to the official burn address where tokens are permanently removed.",
-      link: "/burn",
+      link: "https://pedro-burn.vercel.app/burn",
       linkText: "Burn Pedro",
     },
     {
@@ -408,7 +408,7 @@ export default function PedroBurnBenefits() {
       icon: <FaExchangeAlt className="text-xs md:text-sm" />,
       title: "More Incoming",
       description: "More Incoming for $PEDRO & $FFI.",
-      link: "#",
+      link: "https://pedroinjraccoon.online/",
       linkText: "Main Page",
     }
   ];
