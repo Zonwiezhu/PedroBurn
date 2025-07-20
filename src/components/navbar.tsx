@@ -125,7 +125,7 @@ const Navbar = () => {
 
           <ul className="flex flex-col gap-4 mx-auto lg:gap-6 xl:gap-5 text-neutral-950 items-center mt-20 lg:mt-0 lg:flex-row">
             {[
-              { href: "/burn", label: "TOKEN BURN" },
+              { href: "/burn", label: "PEDRO BURN" },
               { href: "/stats", label: "PEDRO STATS" },
               { href: "/reason", label: "PEDRO REASON" },
               { href: "https://pedroinjraccoon.online/", label: "MAIN" },
