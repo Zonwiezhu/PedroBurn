@@ -6,9 +6,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Head from 'next/head';
 import { Window as KeplrWindow } from "@keplr-wallet/types";
-import { MsgSend, MsgBroadcasterWithPk, ChainRestAuthApi, BaseAccount, ChainRestTendermintApi, createTransaction, getTxRawFromTxRawOrDirectSignResponse, TxRaw, CosmosTxV1Beta1Tx, BroadcastModeKeplr } from '@injectivelabs/sdk-ts'
+import { MsgSend, ChainRestAuthApi, BaseAccount, ChainRestTendermintApi, createTransaction, getTxRawFromTxRawOrDirectSignResponse, TxRaw, CosmosTxV1Beta1Tx, BroadcastModeKeplr } from '@injectivelabs/sdk-ts'
 import { BigNumberInBase, DEFAULT_BLOCK_TIMEOUT_HEIGHT, getStdFee } from '@injectivelabs/utils'
-import { Network } from '@injectivelabs/networks'
 import { ChainId } from '@injectivelabs/ts-types';
 import { TransactionException } from '@injectivelabs/exceptions';
 
