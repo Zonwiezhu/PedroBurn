@@ -278,12 +278,20 @@ const TokenBurnPage = () => {
       const coins = tokens
         .filter(token => selectedTokens.includes(token.denom))
         .map(token => {
-          const rawBurnAmount = token.burnAmount || '0';
-          const amountNum = new BigNumberInBase(rawBurnAmount.replace(/,/g, ''));
+          const rawBalance = token.human_readable_amount.replace(/,/g, '');
+          const balanceNum = new BigNumberInBase(rawBalance);
+          
+          const rawBurnAmount = token.burnAmount.replace(/,/g, '') || '0';
+          let burnAmountNum = new BigNumberInBase(rawBurnAmount);
+
+          if (burnAmountNum.gt(balanceNum)) {
+            burnAmountNum = balanceNum;
+          }
+
 
           return {
             denom: token.denom,
-            amount: amountNum.toWei(token.decimals).toFixed()
+            amount: burnAmountNum.toWei(token.decimals).toFixed()
           };
       });
 
