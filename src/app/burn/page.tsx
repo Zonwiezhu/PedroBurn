@@ -56,32 +56,43 @@ const TokenBurnPage = () => {
     return name.length > 20 ? `${name.substring(0, 14)}...` : name;
   };
 
-  const formatNumber = (value: string, decimals: number): string => {
-    if (!value || value === '0') return `0,${'0'.repeat(decimals)}`;
+ const formatNumberForDisplay = (value: string, decimals: number): string => {
+  if (!value || value === '0') return `0.00`;
+  
+  const numericValue = value.replace(/,/g, '');
+  
+  const roundedValue =Number(numericValue) * 100 / 100;
+  
+  return roundedValue.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 10
+  });
+};
+
+  const parseNumberInput = (value: string): string => {
+    let cleaned = value.replace(/[^0-9.]/g, '');
     
-    const cleanValue = value.replace(/[^0-9,.]/g, '');
+    const decimalSplit = cleaned.split('.');
+    if (decimalSplit.length > 2) {
+      cleaned = `${decimalSplit[0]}.${decimalSplit.slice(1).join('')}`;
+    }
     
-    const normalized = cleanValue.replace(/\./g, '').replace(',', '.');
-    
-    const [integerPart, fractionalPart = ''] = normalized.split('.');
-    
-    const paddedFractional = fractionalPart.padEnd(decimals, '0').slice(0, decimals);
-    
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    
-    return `${formattedInteger},${paddedFractional}`;
+    return cleaned;
   };
 
   const setMaxAmount = (tokenAddress: string) => {
     setTokens(prev => prev.map(token => {
       if (token.denom === tokenAddress) {
-        return { ...token, burnAmount: token.amount };
+        return { 
+          ...token, 
+          burnAmount: token.human_readable_amount.replace(/,/g, '') 
+        };
       }
       return token;
     }));
   };
 
-  const formatIpfslogo = (logo: string | null | undefined): string => {
+  const formatIpfsLogo = (logo: string | null | undefined): string => {
     if (!logo) return '';
     
     if (logo.startsWith('ipfs://')) {
@@ -117,15 +128,6 @@ const TokenBurnPage = () => {
       const ipfsPath = logo.split('ipfs/')[1];
       if (ipfsPath) {
         return `https://ipfs.io/ipfs/${ipfsPath}`;
-      }
-    }
-
-    if (logo.includes('imagedelivery.net')) {
-      try {
-        const url = new URL(logo);
-        return logo;
-      } catch (e) {
-        console.warn('Invalid imagedelivery.net logo:', logo);
       }
     }
 
@@ -241,26 +243,26 @@ const TokenBurnPage = () => {
     localStorage.removeItem("connectedWalletAddress");
   };
 
-const getBurnSummary = (amount: string, burnAmount: string) => {
-  if (!amount || amount === '0') {
-    return { 
-      burnAmount: '0',
-      remainingAmount: '0'
+  const getBurnSummary = (amount: string, burnAmount: string) => {
+    if (!amount || amount === '0') {
+      return { 
+        burnAmount: '0',
+        remainingAmount: '0'
+      };
+    }
+
+    const amountNum = Number(amount.replace(/,/g, ''));
+    const burnAmountNum = Number((burnAmount || '0').replace(/,/g, ''));
+
+    const actualBurn = Math.min(burnAmountNum, amountNum);
+    
+    const remaining = amountNum - actualBurn;
+
+    return {
+      burnAmount: actualBurn.toLocaleString('en-US'),
+      remainingAmount: remaining.toLocaleString('en-US')
     };
-  }
-
-  const amountNum = Number(amount);
-  const burnAmountNum = Number(burnAmount || '0');
-
-  const actualBurn = Math.min(burnAmountNum, amountNum);
-  
-  const remaining = amountNum - actualBurn;
-
-  return {
-    burnAmount: actualBurn.toString(),
-    remainingAmount: remaining.toString()
   };
-};
 
   const handleBurn = () => {
     const burnTransactions = tokens
@@ -570,7 +572,7 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
               >
                 <div className="xl:hidden">
                   {tokens.map((token) => {
-                    const imagelogo = token.logo ? formatIpfslogo(token.logo) : '';                    
+                    const imagelogo = token.logo ? formatIpfsLogo(token.logo) : '';                    
                     const shortenedDenom = token.native 
                       ? 'Native' 
                       : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
@@ -660,7 +662,7 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                           <div>
                             <div className="text-white/50 text-sm mb-1">Balance</div>
                             <div className="text-sm font-mono">
-                              {token.human_readable_amount}
+                              {formatNumberForDisplay(token.human_readable_amount, token.decimals)}
                             </div>
                           </div>
                         </div>
@@ -679,14 +681,17 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                           <input
                             type="text"
                             value={token.burnAmount}
+                            onChange={(e) => {
+                              const cleaned = parseNumberInput(e.target.value);
+                              updateTokenAmount(token.denom, cleaned);
+                            }}
                             onBlur={(e) => {
-                              const formatted = formatNumber(e.target.value, token.decimals);
+                              const formatted = formatNumberForDisplay(e.target.value, token.decimals);
                               updateTokenAmount(token.denom, formatted);
                             }}
                             className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
                           />
                         </div>
-
                       </motion.div>
                     );
                   })}
@@ -706,7 +711,7 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                   </thead>
                   <tbody>
                     {tokens.map((token) => {
-                      const imagelogo = formatIpfslogo(token.logo);
+                      const imagelogo = formatIpfsLogo(token.logo);
                       const shortenedDenom = token.native 
                         ? 'Native' 
                         : `${token.denom.slice(0, 5)}...${token.denom.slice(-5)}`;
@@ -796,7 +801,7 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                             )}
                           </td>
                           <td className="px-6 py-4 text-right font-mono">
-                            {token.human_readable_amount}
+                            {formatNumberForDisplay(token.human_readable_amount, token.decimals)}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex justify-end items-center gap-2">
@@ -804,36 +809,11 @@ const getBurnSummary = (amount: string, burnAmount: string) => {
                                   type="text" 
                                   value={token.burnAmount}
                                   onChange={(e) => {
-                                    const value = e.target.value.replace(/[^0-9,.]/g, '');
-                                    
-                                    const hasComma = value.includes(',');
-                                    const hasPeriod = value.includes('.');
-                                    let cleanedValue = value;
-                                    
-                                    if (hasComma && hasPeriod) {
-                                      const commaIndex = value.indexOf(',');
-                                      const periodIndex = value.indexOf('.');
-                                      cleanedValue = commaIndex < periodIndex 
-                                        ? value.replace(/\./g, '') 
-                                        : value.replace(/,/g, '');
-                                    }
-                                    
-                                    const decimalSeparatorIndex = Math.max(
-                                      cleanedValue.indexOf(','),
-                                      cleanedValue.indexOf('.')
-                                    );
-                                    
-                                    if (decimalSeparatorIndex !== -1) {
-                                      const fractionalPart = cleanedValue.slice(decimalSeparatorIndex + 1);
-                                      if (fractionalPart.length > token.decimals) {
-                                        cleanedValue = cleanedValue.slice(0, decimalSeparatorIndex + 1 + token.decimals);
-                                      }
-                                    }
-                                    
-                                    updateTokenAmount(token.denom, cleanedValue);
+                                    const cleaned = parseNumberInput(e.target.value);
+                                    updateTokenAmount(token.denom, cleaned);
                                   }}
                                   onBlur={(e) => {
-                                    const formatted = formatNumber(e.target.value, token.decimals);
+                                    const formatted = formatNumberForDisplay(e.target.value, token.decimals);
                                     updateTokenAmount(token.denom, formatted);
                                   }}
                                   className="w-full bg-white/5 border border-white/20 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
