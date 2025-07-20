@@ -223,7 +223,6 @@ const TokenBurnPage = () => {
       setIsModalOpen(true);
     } finally {
       setIsLoading(false);
-      setActiveWalletType(null);
     }
   };
 
