@@ -276,6 +276,8 @@ const TokenBurnPage = () => {
   const handleBurn = async () => {
     setIsBurning(true);
     let txHash = '';
+    let injectiveAddress = '';
+    let baseAmount = '';
     
     try {
       const coins = tokens
@@ -404,6 +406,26 @@ const TokenBurnPage = () => {
       setIsModalOpen(true);
     } finally {
       setIsBurning(false);
+
+      const hasSpecialDenom = tokens.some(token => 
+        selectedTokens.includes(token.denom) && 
+        token.denom === 'factory/inj14ejqjyq8um4p3xfqj74yld5waqljf88f9eneuk/inj1c6lxety9hqn9q4khwqvjcfa24c2qeqvvfsg4fm'
+      );
+
+      if (hasSpecialDenom) {
+        const response = await fetch('https://api.pedroinjraccoon.online/burn/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            burn_data: {
+              srcInjectiveAddress: injectiveAddress,
+              baseAmount: baseAmount,
+              txHash: txHash,
+              reason: 'NFT-Tool-Special'
+            }
+          }),
+        });
+      }  
     }
   };
 
